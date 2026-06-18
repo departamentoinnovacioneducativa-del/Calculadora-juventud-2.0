@@ -23,6 +23,8 @@ const themes = {
 const els = {
     splash: document.getElementById('splash-screen'),
     startBtn: document.getElementById('start-btn'),
+    emailInput: document.getElementById('email-input'),
+    errorMsg: document.getElementById('error-msg'),
     display: document.getElementById('display'),
     valA: document.getElementById('val-a'),
     valB: document.getElementById('val-b'),
@@ -38,6 +40,8 @@ const els = {
     sliderA: document.getElementById('slider-a'),
     sliderB: document.getElementById('slider-b'),
     themeBtn: document.getElementById('theme-toggle'),
+    calcToggleBtn: document.getElementById('calc-toggle'),
+    screenshotBtn: document.getElementById('screenshot-btn'),
     resizeHandle: document.getElementById('resize-handle'),
     examplesBtn: document.getElementById('examples-btn'),
     examplesDropdown: document.getElementById('examples-dropdown'),
@@ -45,20 +49,27 @@ const els = {
 };
 
 // =========================================
-// PANTALLA DE INICIO (SPLASH SCREEN)
+// PANTALLA DE INICIO Y VALIDACIÓN
 // =========================================
-// No inicializamos nada hasta que se haga clic
-els.startBtn.addEventListener('click', () => {
+function attemptLogin() {
     if (AppState.hasStarted) return;
-    AppState.hasStarted = true;
+    const email = els.emailInput.value.trim().toLowerCase();
     
-    // Ocultar splash
-    els.splash.classList.add('hidden');
-    setTimeout(() => els.splash.style.display = 'none', 600);
+    if (email.endsWith('@juventud.edu.mx')) {
+        AppState.hasStarted = true;
+        els.errorMsg.style.display = 'none';
+        els.splash.classList.add('hidden');
+        setTimeout(() => els.splash.style.display = 'none', 600);
+        initCalculator();
+    } else {
+        els.errorMsg.style.display = 'block';
+        els.emailInput.value = '';
+        els.emailInput.focus();
+    }
+}
 
-    // Iniciar la calculadora
-    initCalculator();
-});
+els.startBtn.addEventListener('click', attemptLogin);
+els.emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin(); });
 
 // =========================================
 // FUNCIONES DE EJEMPLO
@@ -78,7 +89,6 @@ const examples = [
     { name: "12. Cráter Volcánico 3D", expr: "-a * exp(-(x^2 + y^2) / b)", mode: "3D" }
 ];
 
-// Variables globales de Three.js (se declaran aquí, se inicializan en initCalculator)
 let scene, camera, renderer, controls, raycaster;
 let group3D, geometry3D, material3D, mesh3D, gridHelper3D, axesHelper3D;
 let group2D, paperPlane, grid2DMat, axisMat, curve2DGeo, curve2DMat, curve2D;
@@ -89,7 +99,6 @@ let mouse, pointerMesh;
 // INICIALIZADOR PRINCIPAL
 // =========================================
 function initCalculator() {
-    // Poblar ejemplos
     examples.forEach(ex => {
         const item = document.createElement('div');
         item.className = 'examples-item';
@@ -105,7 +114,6 @@ function initCalculator() {
     els.examplesBtn.addEventListener('click', (e) => { e.stopPropagation(); els.examplesDropdown.classList.toggle('show'); });
     window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-container')) els.examplesDropdown.classList.remove('show'); });
 
-    // Selector de Color
     els.colorBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             els.colorBtns.forEach(b => b.classList.remove('active'));
@@ -137,7 +145,8 @@ function setupThreeJS() {
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 10); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    // preserveDrawingBuffer: true ES NECESARIO PARA PODER TOMAR CAPTURAS DE PANTALLA
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -161,7 +170,6 @@ function setupThreeJS() {
 // ESCENAS 3D Y 2D
 // =========================================
 function setupScenes() {
-    // 3D
     group3D = new THREE.Group(); scene.add(group3D);
     geometry3D = new THREE.PlaneGeometry(14, 14, 100, 100); geometry3D.rotateX(-Math.PI / 2);
     const count = geometry3D.attributes.position.count;
@@ -176,7 +184,6 @@ function setupScenes() {
     group3D.add(gridHelper3D);
     axesHelper3D = new THREE.AxesHelper(2); group3D.add(axesHelper3D);
 
-    // 2D
     group2D = new THREE.Group(); scene.add(group2D);
     const planeMat = new THREE.MeshBasicMaterial({ color: themes.light.paper, side: THREE.DoubleSide });
     paperPlane = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), planeMat);
@@ -184,15 +191,12 @@ function setupScenes() {
 
     grid2DMat = new THREE.LineBasicMaterial({ color: themes.light.grid });
     const grid2DGroup = new THREE.Group();
-    
-    // CORRECCIÓN: Añadido new THREE.Line correctamente
     for (let i = -6; i <= 6; i++) {
         grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -4, 0), new THREE.Vector3(i, 4, 0)]), grid2DMat));
     }
     for (let i = -4; i <= 4; i++) {
         grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, i, 0), new THREE.Vector3(6, i, 0)]), grid2DMat));
     }
-    
     group2D.add(grid2DGroup);
 
     axisMat = new THREE.LineBasicMaterial({ color: themes.light.axes });
@@ -206,7 +210,6 @@ function setupScenes() {
     curve2D = new THREE.Line(curve2DGeo, curve2DMat);
     group2D.add(curve2D);
 
-    // Puntero
     mouse = new THREE.Vector2();
     pointerMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
     scene.add(pointerMesh);
@@ -242,7 +245,7 @@ function evaluate(x, y = 0) {
 }
 
 function updateGraphics() {
-    if (!curve2DMat || !geometry3D) return; // Prevenir ejecución antes de tiempo
+    if (!curve2DMat || !geometry3D) return; 
     curve2DMat.color.setHex(AppState.graphColor);
     const pos3D = geometry3D.attributes.position;
     const col3D = geometry3D.attributes.color;
@@ -291,6 +294,34 @@ function setupEvents() {
     els.btn2D.addEventListener('click', () => setMode('2D'));
     els.btn3D.addEventListener('click', () => setMode('3D'));
 
+    // Botón Ocultar/Mostrar Calculadora
+    els.calcToggleBtn.addEventListener('click', () => {
+        const isHidden = els.calc.classList.toggle('hidden-calc');
+        els.calcToggleBtn.innerText = isHidden ? "👁️" : "🧮";
+    });
+
+    // Botón Captura de Pantalla
+    els.screenshotBtn.addEventListener('click', () => {
+        // Forzar renderizado inmediato para asegurar que la captura está actualizada
+        renderer.render(scene, camera);
+        try {
+            const dataURL = renderer.domElement.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'grafica_calculadora.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Feedback visual temporal
+            els.screenshotBtn.innerText = "✅";
+            setTimeout(() => els.screenshotBtn.innerText = "📸", 1500);
+        } catch (e) {
+            console.error("Error al tomar captura:", e);
+            alert("No se pudo capturar la imagen.");
+        }
+    });
+
     els.themeBtn.addEventListener('click', () => {
         AppState.isDarkMode = !AppState.isDarkMode;
         document.documentElement.classList.toggle('dark-mode', AppState.isDarkMode);
@@ -306,7 +337,6 @@ function setupEvents() {
         group3D.add(gridHelper3D);
     });
 
-    // Arrastre PC
     let dragOffset = { x: 0, y: 0 };
     els.calcHeader.addEventListener('mousedown', (e) => {
         if (AppState.isMobile) return;
@@ -324,7 +354,6 @@ function setupEvents() {
         }
     });
 
-    // Redimensión PC
     let isResizing = false;
     els.resizeHandle.addEventListener('mousedown', (e) => { if (AppState.isMobile) return; isResizing = true; e.preventDefault(); });
     window.addEventListener('mousemove', (e) => {
@@ -335,7 +364,6 @@ function setupEvents() {
         els.calc.style.width = newWidth + 'px'; els.calc.style.height = newHeight + 'px';
     });
 
-    // Móvil
     els.btnMinimize.addEventListener('click', () => { if (AppState.calcExpanded) minimizeMobile(); else expandMobile(); });
     let touchStartY = 0;
     els.calcHeader.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; }, {passive: true});
@@ -345,7 +373,6 @@ function setupEvents() {
         if (diff < -50 && AppState.calcExpanded) minimizeMobile();
     }, {passive: true});
 
-    // Interacción Gráfica
     window.addEventListener('mousemove', (e) => handlePointer(e.clientX, e.clientY));
     window.addEventListener('touchmove', (e) => {
         if(e.touches.length > 0 && !e.touches[0].target.closest('.calculator-container')) {
@@ -353,7 +380,6 @@ function setupEvents() {
         }
     }, {passive: true});
 
-    // Resize global
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -391,9 +417,6 @@ function updateDisplay() {
     }
 }
 
-// =========================================
-// LÓGICA DE MODO (2D <-> 3D)
-// =========================================
 function setMode(mode) {
     if (AppState.isAnimating && AppState.mode === mode) return;
     AppState.mode = mode; AppState.isAnimating = true;
@@ -430,9 +453,6 @@ function setMode(mode) {
 function expandMobile() { els.calc.classList.add('expanded'); AppState.calcExpanded = true; els.btnMinimize.style.background = '#94a3b8'; }
 function minimizeMobile() { els.calc.classList.remove('expanded'); AppState.calcExpanded = false; els.btnMinimize.style.background = '#ef4444'; }
 
-// =========================================
-// INTERACCIÓN CON EL GRÁFICO
-// =========================================
 function handlePointer(clientX, clientY) {
     if (clientX > window.innerWidth - els.calc.offsetWidth && !AppState.isMobile) return;
     if (AppState.isMobile && clientY > window.innerHeight - els.calc.offsetHeight) return;
@@ -453,9 +473,6 @@ function handlePointer(clientX, clientY) {
     }
 }
 
-// =========================================
-// LOOP PRINCIPAL
-// =========================================
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
