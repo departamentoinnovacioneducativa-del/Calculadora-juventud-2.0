@@ -172,4 +172,19 @@ function setupScenes() {
     mesh3D.castShadow = true; mesh3D.receiveShadow = true; mesh3D.visible = false;
     group3D.add(mesh3D);
 
-    gridHelper
+    gridHelper3D = new THREE.GridHelper(20,20, themes.light.grid3D_center, themes.light.grid3D_base);
+    group3D.add(gridHelper3D);
+    axesHelper3D = new THREE.AxesHelper(2); group3D.add(axesHelper3D);
+
+    // 2D
+    group2D = new THREE.Group(); scene.add(group2D);
+    const planeMat = new THREE.MeshBasicMaterial({ color: themes.light.paper, side: THREE.DoubleSide });
+    paperPlane = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), planeMat);
+    paperPlane.position.z = -0.1; group2D.add(paperPlane);
+
+    grid2DMat = new THREE.LineBasicMaterial({ color: themes.light.grid });
+    const grid2DGroup = new THREE.Group();
+    
+    // CORRECCIÓN: Añadido new THREE.Line correctamente
+    for (let i = -6; i <= 6; i++) {
+        grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -
