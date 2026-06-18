@@ -146,7 +146,7 @@ function setupThreeJS() {
     camera.position.set(0, 0, 10); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -212,13 +212,12 @@ function setupScenes() {
     axis1DMat = new THREE.LineBasicMaterial({ color: themes.light.axes });
     group1D.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-10, 0, 0), new THREE.Vector3(10, 0, 0)]), axis1DMat));
     
-    // Marcas en la recta numérica
     for(let i = -10; i <= 10; i++) {
         const tickGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -0.2, 0), new THREE.Vector3(i, 0.2, 0)]);
         group1D.add(new THREE.Line(tickGeo, axis1DMat));
     }
     
-    pointer1DMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+    pointer1DMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: AppState.graphColor }));
     group1D.add(pointer1DMesh);
     group1D.visible = false;
 
@@ -326,8 +325,6 @@ function setupEvents() {
     els.calcToggleBtn.addEventListener('click', () => {
         const isHidden = els.calc.classList.toggle('hidden-calc');
         els.calcToggleBtn.innerText = isHidden ? "👁️" : "🧮";
-        // Notificar a Three.js del cambio de tamaño
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
     });
 
     els.playBtn.addEventListener('click', () => {
@@ -411,10 +408,9 @@ function setupEvents() {
     }, {passive: true});
 
     window.addEventListener('resize', () => {
-        const container = document.getElementById('viewport');
-        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(window.innerWidth, window.innerHeight);
         const isNowMobile = window.innerWidth <= 768;
         if (isNowMobile !== AppState.isMobile) location.reload(); 
     });
