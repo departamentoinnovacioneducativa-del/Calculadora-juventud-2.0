@@ -187,4 +187,277 @@ function setupScenes() {
     
     // CORRECCIÓN: Añadido new THREE.Line correctamente
     for (let i = -6; i <= 6; i++) {
-        grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -
+        grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -4, 0), new THREE.Vector3(i, 4, 0)]), grid2DMat));
+    }
+    for (let i = -4; i <= 4; i++) {
+        grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, i, 0), new THREE.Vector3(6, i, 0)]), grid2DMat));
+    }
+    
+    group2D.add(grid2DGroup);
+
+    axisMat = new THREE.LineBasicMaterial({ color: themes.light.axes });
+    group2D.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0)]), axisMat));
+    group2D.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -4, 0), new THREE.Vector3(0, 4, 0)]), axisMat));
+
+    const curveRes = 400;
+    curve2DGeo = new THREE.BufferGeometry();
+    curve2DGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(curveRes * 3), 3));
+    curve2DMat = new THREE.LineBasicMaterial({ color: AppState.graphColor });
+    curve2D = new THREE.Line(curve2DGeo, curve2DMat);
+    group2D.add(curve2D);
+
+    // Puntero
+    mouse = new THREE.Vector2();
+    pointerMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
+    scene.add(pointerMesh);
+    pointerMesh.visible = false;
+}
+
+// =========================================
+// MOTOR MATEMÁTICO
+// =========================================
+function prepareExpression(rawExpr) {
+    let expr = rawExpr.toLowerCase();
+    expr = expr.replace(/\^/g, '**');
+    expr = expr.replace(/(\d)([a-zA-Z\(])/g, '$1*$2'); 
+    expr = expr.replace(/\)([a-zA-Z0-9\(])/g, ')*$1');  
+    expr = expr.replace(/([xyz])([xyz\(])/g, '$1*$2');  
+    expr = expr.replace(/\bln\(/g, 'Math.log(');
+    expr = expr.replace(/\blog\(/g, 'Math.log10(');
+    const funcs = ['sin','cos','tan','asin','acos','atan','sqrt','abs','exp','pow','floor','ceil','round'];
+    funcs.forEach(f => { expr = expr.replace(new RegExp(`\\b${f}\\(`, 'g'), `Math.${f}(`); });
+    expr = expr.replace(/\bpi\b/g, 'Math.PI');
+    expr = expr.replace(/\be\b/g, 'Math.E'); 
+    return expr;
+}
+
+function evaluate(x, y = 0) {
+    if (!AppState.expression) return 0;
+    try {
+        const expr = prepareExpression(AppState.expression);
+        const f = new Function('x', 'y', 'z', 'a', 'b', `return ${expr};`);
+        const r = f(x, y, 0, AppState.a, AppState.b);
+        return (isNaN(r) || !isFinite(r)) ? null : r;
+    } catch (e) { return null; }
+}
+
+function updateGraphics() {
+    if (!curve2DMat || !geometry3D) return; // Prevenir ejecución antes de tiempo
+    curve2DMat.color.setHex(AppState.graphColor);
+    const pos3D = geometry3D.attributes.position;
+    const col3D = geometry3D.attributes.color;
+    const cLow = new THREE.Color(AppState.graphColor);
+    const cHigh = new THREE.Color(0xffffff);
+    const tempC = new THREE.Color();
+
+    for (let i = 0; i < pos3D.count; i++) {
+        const x = pos3D.getX(i), y = pos3D.getZ(i);
+        const z = evaluate(x, y);
+        if (z !== null) {
+            pos3D.setY(i, z);
+            const t = THREE.MathUtils.clamp((z + 5) / 10, 0, 1);
+            tempC.lerpColors(cLow, cHigh, t);
+            col3D.setXYZ(i, tempC.r, tempC.g, tempC.b);
+        } else { pos3D.setY(i, 0); }
+    }
+    pos3D.needsUpdate = true; col3D.needsUpdate = true;
+    geometry3D.computeVertexNormals();
+
+    const pos2D = curve2DGeo.attributes.position;
+    for (let i = 0; i < pos2D.count; i++) {
+        const x = (i / (pos2D.count - 1)) * 12 - 6;
+        const y = evaluate(x, 0);
+        if (y !== null) { pos2D.setXYZ(i, x, y, 0); } else { pos2D.setXYZ(i, x, 0, 0); }
+    }
+    pos2D.needsUpdate = true;
+}
+
+// =========================================
+// EVENTOS DE UI
+// =========================================
+function setupEvents() {
+    els.keypad.addEventListener('click', (e) => {
+        const btn = e.target.closest('button.key');
+        if (!btn) return;
+        if (btn.dataset.insert) insertText(btn.dataset.insert);
+        else if (btn.dataset.action === 'clear') clearDisplay();
+        else if (btn.dataset.action === 'backspace') backspace();
+        else if (btn.dataset.action === 'calculate') calculate();
+    });
+
+    els.sliderA.addEventListener('input', (e) => { AppState.a = parseFloat(e.target.value); els.valA.innerText = AppState.a.toFixed(1); updateGraphics(); });
+    els.sliderB.addEventListener('input', (e) => { AppState.b = parseFloat(e.target.value); els.valB.innerText = AppState.b.toFixed(1); updateGraphics(); });
+    
+    els.btn2D.addEventListener('click', () => setMode('2D'));
+    els.btn3D.addEventListener('click', () => setMode('3D'));
+
+    els.themeBtn.addEventListener('click', () => {
+        AppState.isDarkMode = !AppState.isDarkMode;
+        document.documentElement.classList.toggle('dark-mode', AppState.isDarkMode);
+        els.themeBtn.innerText = AppState.isDarkMode ? "☀️" : "🌙";
+        const theme = AppState.isDarkMode ? themes.dark : themes.light;
+        scene.background.setHex(theme.bg);
+        paperPlane.material.color.setHex(theme.paper);
+        grid2DMat.color.setHex(theme.grid);
+        axisMat.color.setHex(theme.axes);
+        group3D.remove(gridHelper3D);
+        gridHelper3D.geometry.dispose(); gridHelper3D.material.dispose();
+        gridHelper3D = new THREE.GridHelper(20, 20, theme.grid3D_center, theme.grid3D_base);
+        group3D.add(gridHelper3D);
+    });
+
+    // Arrastre PC
+    let dragOffset = { x: 0, y: 0 };
+    els.calcHeader.addEventListener('mousedown', (e) => {
+        if (AppState.isMobile) return;
+        AppState.isDraggingCalc = true;
+        dragOffset.x = e.clientX - els.calc.offsetLeft; dragOffset.y = e.clientY - els.calc.offsetTop;
+        els.calcHeader.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mouseup', () => { AppState.isDraggingCalc = false; els.calcHeader.style.cursor = AppState.isMobile ? 'default' : 'grab'; });
+    window.addEventListener('mousemove', (e) => {
+        if (AppState.isDraggingCalc && !AppState.isMobile) {
+            let newX = e.clientX - dragOffset.x, newY = e.clientY - dragOffset.y;
+            newX = Math.max(0, Math.min(window.innerWidth - els.calc.offsetWidth, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - els.calc.offsetHeight, newY));
+            els.calc.style.left = newX + 'px'; els.calc.style.top = newY + 'px'; els.calc.style.right = 'auto';
+        }
+    });
+
+    // Redimensión PC
+    let isResizing = false;
+    els.resizeHandle.addEventListener('mousedown', (e) => { if (AppState.isMobile) return; isResizing = true; e.preventDefault(); });
+    window.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        let newWidth = e.clientX - els.calc.offsetLeft, newHeight = e.clientY - els.calc.offsetTop;
+        newWidth = Math.max(300, Math.min(window.innerWidth - els.calc.offsetLeft - 10, newWidth));
+        newHeight = Math.max(400, Math.min(window.innerHeight - els.calc.offsetTop - 10, newHeight));
+        els.calc.style.width = newWidth + 'px'; els.calc.style.height = newHeight + 'px';
+    });
+
+    // Móvil
+    els.btnMinimize.addEventListener('click', () => { if (AppState.calcExpanded) minimizeMobile(); else expandMobile(); });
+    let touchStartY = 0;
+    els.calcHeader.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; }, {passive: true});
+    els.calcHeader.addEventListener('touchmove', (e) => {
+        const touchY = e.touches[0].clientY, diff = touchStartY - touchY;
+        if (diff > 50 && !AppState.calcExpanded) expandMobile();
+        if (diff < -50 && AppState.calcExpanded) minimizeMobile();
+    }, {passive: true});
+
+    // Interacción Gráfica
+    window.addEventListener('mousemove', (e) => handlePointer(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => {
+        if(e.touches.length > 0 && !e.touches[0].target.closest('.calculator-container')) {
+            handlePointer(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, {passive: true});
+
+    // Resize global
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const isNowMobile = window.innerWidth <= 768;
+        if (isNowMobile !== AppState.isMobile) location.reload(); 
+    });
+}
+
+function insertText(char) { AppState.expression += char; updateDisplay(); updateGraphics(); }
+function clearDisplay() { AppState.expression = ""; updateDisplay(); updateGraphics(); }
+function backspace() { AppState.expression = AppState.expression.slice(0, -1); updateDisplay(); updateGraphics(); }
+function calculate() {
+    els.calc.classList.remove('pulse');
+    void els.calc.offsetWidth; 
+    els.calc.classList.add('pulse');
+    updateGraphics();
+}
+
+function updateDisplay() {
+    const text = AppState.expression || "0";
+    let isSyntaxError = false;
+    if (text !== "0") {
+        try {
+            const expr = prepareExpression(text);
+            new Function('x', 'y', 'z', 'a', 'b', `return ${expr};`);
+        } catch (e) { isSyntaxError = true; }
+    }
+    if (isSyntaxError) {
+        els.display.classList.add('error');
+        els.display.innerHTML = `Error: ${text}<span class="cursor"></span>`;
+    } else {
+        els.display.classList.remove('error');
+        els.display.innerHTML = text + '<span class="cursor"></span>';
+    }
+}
+
+// =========================================
+// LÓGICA DE MODO (2D <-> 3D)
+// =========================================
+function setMode(mode) {
+    if (AppState.isAnimating && AppState.mode === mode) return;
+    AppState.mode = mode; AppState.isAnimating = true;
+    
+    els.btn2D.classList.toggle('active', mode === '2D');
+    els.btn3D.classList.toggle('active', mode === '3D');
+    els.statusText.innerText = mode === '2D' ? "MODO 2D" : "MODO 3D";
+    els.statusDot.style.background = mode === '2D' ? "#22c55e" : "#3b82f6";
+
+    let targetPos, targetLookAt, targetUp;
+    if (mode === '2D') {
+        group3D.visible = false; group2D.visible = true; mesh3D.visible = false;
+        targetPos = new THREE.Vector3(0, 0, 10); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
+    } else {
+        group3D.visible = true; group2D.visible = false; mesh3D.visible = true;
+        targetPos = new THREE.Vector3(8, 6, 8); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
+    }
+
+    const startPos = camera.position.clone(), startUp = camera.up.clone(), startTarget = controls.target.clone();
+    let progress = 0;
+    function animateCamera() {
+        progress += 0.025; if (progress > 1) progress = 1;
+        const ease = 1 - Math.pow(1 - progress, 3); 
+        camera.position.lerpVectors(startPos, targetPos, ease);
+        camera.up.lerpVectors(startUp, targetUp, ease);
+        controls.target.lerpVectors(startTarget, targetLookAt, ease);
+        controls.update();
+        if (progress < 1) requestAnimationFrame(animateCamera);
+        else { AppState.isAnimating = false; controls.enableRotate = (mode === '3D'); }
+    }
+    animateCamera();
+}
+
+function expandMobile() { els.calc.classList.add('expanded'); AppState.calcExpanded = true; els.btnMinimize.style.background = '#94a3b8'; }
+function minimizeMobile() { els.calc.classList.remove('expanded'); AppState.calcExpanded = false; els.btnMinimize.style.background = '#ef4444'; }
+
+// =========================================
+// INTERACCIÓN CON EL GRÁFICO
+// =========================================
+function handlePointer(clientX, clientY) {
+    if (clientX > window.innerWidth - els.calc.offsetWidth && !AppState.isMobile) return;
+    if (AppState.isMobile && clientY > window.innerHeight - els.calc.offsetHeight) return;
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const target = AppState.mode === '2D' ? curve2D : mesh3D;
+    const intersects = raycaster.intersectObject(target);
+    if (intersects.length > 0) {
+        const point = intersects[0].point;
+        pointerMesh.position.copy(point); pointerMesh.visible = true;
+        els.tooltip.style.display = 'block';
+        els.tooltip.style.left = clientX + 'px'; els.tooltip.style.top = clientY + 'px';
+        if (AppState.mode === '2D') els.tooltip.innerText = `x: ${point.x.toFixed(2)}, y: ${point.y.toFixed(2)}`;
+        else els.tooltip.innerText = `x: ${point.x.toFixed(2)}, z: ${point.z.toFixed(2)}`;
+    } else {
+        pointerMesh.visible = false; els.tooltip.style.display = 'none';
+    }
+}
+
+// =========================================
+// LOOP PRINCIPAL
+// =========================================
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
