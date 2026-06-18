@@ -53,37 +53,35 @@ const els = {
 };
 
 // =========================================
-// PANTALLA DE INICIO Y VALIDACIÓN
+// PANTALLA DE INICIO Y VALIDACIÓN ESTRICTA
 // =========================================
 function attemptLogin() {
     if (AppState.hasStarted) return;
     const email = els.emailInput.value.trim().toLowerCase();
     
-    // Validación flexible: solo necesita contener el dominio institucional
-    if (email.includes('@juventud.edu.mx')) {
+    // Validación estricta: debe terminar exactamente en @juventud.edu.mx
+    if (email.endsWith('@juventud.edu.mx')) {
         AppState.hasStarted = true;
         els.errorMsg.style.display = 'none';
         
         // Ocultar splash screen
-        els.splash.style.opacity = '0';
-        els.splash.style.pointerEvents = 'none';
+        els.splash.classList.add('hidden');
         setTimeout(() => { els.splash.style.display = 'none'; }, 600);
 
-        // Iniciar calculadora de forma segura
+        // Iniciar calculadora
         try {
             initCalculator();
         } catch (e) {
-            console.error("Error al inicializar la calculadora:", e);
-            alert("Hubo un problema al cargar el motor gráfico. Revisa la consola (F12).");
+            console.error("Error al inicializar:", e);
         }
     } else {
+        // Mostrar error si no termina en el dominio
         els.errorMsg.style.display = 'block';
         els.emailInput.value = '';
         els.emailInput.focus();
     }
 }
 
-// Listeners de inicio garantizados
 els.startBtn.addEventListener('click', attemptLogin);
 els.emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin(); });
 
@@ -122,7 +120,7 @@ function initCalculator() {
         item.innerText = ex.name;
         item.addEventListener('click', () => {
             AppState.expression = ex.expr;
-            updateDisplay(); updateGraphics(); setMode(ex.mode);
+            updateDisplay(); updateGraphics(AppState.time); setMode(ex.mode);
             els.examplesDropdown.classList.remove('show');
         });
         els.examplesDropdown.appendChild(item);
@@ -136,7 +134,7 @@ function initCalculator() {
             els.colorBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             AppState.graphColor = parseInt(btn.dataset.color);
-            updateGraphics();
+            updateGraphics(AppState.time);
         });
     });
 
@@ -311,13 +309,11 @@ function setupEvents() {
         els.calcToggleBtn.innerText = isHidden ? "👁️" : "🧮";
     });
 
-    // Botón Animación Play/Pause
     els.playBtn.addEventListener('click', () => {
         AppState.isPlaying = !AppState.isPlaying;
         els.playBtn.innerText = AppState.isPlaying ? "⏸️" : "▶️";
     });
 
-    // Botón Captura de Pantalla
     els.screenshotBtn.addEventListener('click', () => {
         renderer.render(scene, camera);
         try {
@@ -336,7 +332,6 @@ function setupEvents() {
         }
     });
 
-    // Botón Grabar Video
     els.videoBtn.addEventListener('click', () => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
@@ -350,7 +345,7 @@ function setupEvents() {
                     options = { mimeType: 'video/mp4' };
                 }
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = {}; // Soporte genérico
+                    options = {}; 
                 }
                 
                 mediaRecorder = new MediaRecorder(stream, options);
@@ -533,10 +528,9 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
     
-    // Lógica de animación Play
     if (AppState.isPlaying) {
         AppState.time += 0.05;
-        if (AppState.time > Math.PI * 2) AppState.time = 0; // Loop de 0 a 2PI
+        if (AppState.time > Math.PI * 2) AppState.time = 0; 
         updateGraphics(AppState.time);
     }
     
