@@ -33,8 +33,11 @@
         </div>
     </div>
 
-    <!-- Lienzo Gráfico -->
-    <div id="viewport">
+    <!-- Lienzo Gráfico Estático (Siempre al fondo) -->
+    <div id="viewport"></div>
+
+    <!-- Interfaz Superpuesta (HUD y Botones) -->
+    <div id="ui-overlay">
         <div class="hud-overlay">
             <div class="mode-badge">
                 <div class="mode-dot" id="status-dot"></div>
@@ -42,7 +45,6 @@
             </div>
         </div>
 
-        <!-- Botones Superiores -->
         <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
         <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
         <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
@@ -53,7 +55,7 @@
         <div id="version-tag">versión 2.033</div>
     </div>
 
-    <!-- Calculadora Estática -->
+    <!-- Calculadora (Panel Superpuesto) -->
     <div class="calculator-container" id="calculator">
         <div class="calc-header">
             <span class="header-title">GRAPH ENGINE PRO</span>
@@ -71,9 +73,9 @@
             </div>
 
             <div class="view-toggle">
+                <button type="button" class="toggle-btn" id="btn-1d">1D</button>
                 <button type="button" class="toggle-btn active" id="btn-2d">2D</button>
                 <button type="button" class="toggle-btn" id="btn-3d">3D</button>
-                <button type="button" class="toggle-btn" id="btn-1d">1D</button>
             </div>
 
             <div class="color-selector">
