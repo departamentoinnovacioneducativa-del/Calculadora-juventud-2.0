@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Calculadora Gráfica Institucional</title>
     
+    <!-- Precargar imagen para que aparezca al instante -->
+    <link rel="preload" as="image" href="Calculadora.jpg">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -19,8 +22,10 @@
 
     <!-- Pantalla de Inicio (Splash Screen) -->
     <div id="splash-screen">
-        <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
-        <div class="splash-loader">Cargando motor gráfico...</div>
+        <div class="splash-content">
+            <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
+            <button id="start-btn" class="start-btn">COMENZAR</button>
+        </div>
     </div>
 
     <!-- Interfaz Superior (HUD) -->
@@ -31,18 +36,11 @@
         </div>
     </div>
 
-    <!-- Botón de Cambio de Tema -->
     <button id="theme-toggle" class="theme-btn" aria-label="Cambiar tema">🌙</button>
-
-    <!-- Tooltip de Coordenadas -->
     <div id="tooltip" class="tooltip"></div>
-
-    <!-- Lienzo Gráfico 3D/2D -->
     <div id="viewport"></div>
 
-    <!-- Calculadora Flotante -->
     <div class="calculator-container" id="calculator">
-        
         <div class="calc-header" id="calc-header">
             <div class="header-inner">
                 <div class="mobile-drag-handle" id="mobile-handle"></div>
@@ -69,7 +67,6 @@
                 <button class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
             </div>
 
-            <!-- Selector de Color Institucional -->
             <div class="color-selector">
                 <span class="color-label">Color Gráfica:</span>
                 <div class="color-options">
