@@ -1,347 +1,3 @@
-He pulido todos los detalles. Descubrí que el problema de inicio de sesión era un pequeño conflicto de eventos (los botones HTML intentaban enviar un formulario inexistente); lo he solucionado añadiendo `type="button"`. 
-
-Además:
-1. **Botón de Video Corregido**: Mejoré la lógica de grabación para que sea compatible con todos los navegadores (ahora busca el formato compatible, ya sea WebM o MP4).
-2. **Posición de Botones**: El botón de video (🎥) está pegado al de captura (📸).
-3. **Botón Play (Animación)**: Añadí un botón ▶️. Al presionarlo, se inyecta una variable de tiempo `t` en la gráfica que oscila de 0 a 2π, dándole movimiento. 
-*(Nota: Para ver el movimiento, usa la variable `t` en tu función, por ejemplo: `sin(x + t)` o prueba el ejemplo 1 que ahora incluye el movimiento).*
-
-Aquí tienes los 3 archivos:
-
-### 1. `index.html`
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculadora Gráfica Institucional</title>
-    
-    <link rel="preload" as="image" href="Calculadora.jpg">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Three.js versión clásica -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-</head>
-<body>
-
-    <!-- Pantalla de Inicio -->
-    <div id="splash-screen">
-        <div class="splash-content">
-            <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
-            <div class="login-box">
-                <h2>Acceso Institucional</h2>
-                <p class="login-subtitle">Verificación de dominio (ej. tu.correo@juventud.edu.mx)</p>
-                <input type="email" id="email-input" placeholder="tu.correo@juventud.edu.mx" autocomplete="off">
-                <!-- Se añadió type="button" para evitar recargas de página -->
-                <button type="button" id="start-btn" class="start-btn">Ingresar</button>
-                <p id="error-msg" class="error-msg">Solo se permiten correos @juventud.edu.mx</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- HUD -->
-    <div class="hud-overlay">
-        <div class="mode-badge">
-            <div class="mode-dot" id="status-dot"></div>
-            <span id="status-text">MODO 2D</span>
-        </div>
-    </div>
-
-    <!-- Botones Superiores Derechos (Ordenados) -->
-    <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
-    <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
-    <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
-    <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
-    <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
-
-    <div id="tooltip" class="tooltip"></div>
-    <div id="viewport"></div>
-
-    <div class="calculator-container" id="calculator">
-        <div class="calc-header" id="calc-header">
-            <div class="header-inner">
-                <div class="mobile-drag-handle" id="mobile-handle"></div>
-                <span class="header-title">GRAPH ENGINE PRO</span>
-            </div>
-            <div class="header-controls">
-                <button type="button" class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
-            </div>
-        </div>
-
-        <div class="screen-container">
-            <div class="screen-label">f(x, y, t) =</div>
-            <div class="screen-output" id="display"><span class="cursor"></span></div>
-        </div>
-
-        <div class="controls-area">
-            <div class="dropdown-container">
-                <button type="button" id="examples-btn" class="examples-btn">Ejemplos Rápidos ⌄</button>
-                <div id="examples-dropdown" class="examples-dropdown"></div>
-            </div>
-
-            <div class="view-toggle">
-                <button type="button" class="toggle-btn active" id="btn-2d">2D GRÁFICO</button>
-                <button type="button" class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
-            </div>
-
-            <div class="color-selector">
-                <span class="color-label">Color Gráfica:</span>
-                <div class="color-options">
-                    <button type="button" class="color-btn green active" data-color="0x006847" title="Verde Bandera"></button>
-                    <button type="button" class="color-btn yellow" data-color="0xFFD700" title="Amarillo"></button>
-                    <button type="button" class="color-btn blue" data-color="0x0033A0" title="Azul"></button>
-                </div>
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-row">
-                    <span>Parámetro A</span>
-                    <span id="val-a">1.0</span>
-                </div>
-                <input type="range" id="slider-a" min="-5" max="5" step="0.1" value="1">
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-row">
-                    <span>Parámetro B</span>
-                    <span id="val-b">1.0</span>
-                </div>
-                <input type="range" id="slider-b" min="0.1" max="10" step="0.1" value="1">
-            </div>
-        </div>
-
-        <div class="keypad" id="keypad">
-            <button type="button" class="key func" data-insert="sin(">sin</button>
-            <button type="button" class="key func" data-insert="cos(">cos</button>
-            <button type="button" class="key func" data-insert="tan(">tan</button>
-            <button type="button" class="key func" data-insert="log(">log</button>
-            <button type="button" class="key func" data-insert="ln(">ln</button>
-
-            <button type="button" class="key func" data-insert="x">x</button>
-            <button type="button" class="key func" data-insert="y">y</button>
-            <button type="button" class="key func" data-insert="z">z</button>
-            <button type="button" class="key func" data-insert="t">t</button>
-            <button type="button" class="key func" data-insert="(">(</button>
-
-            <button type="button" class="key func" data-insert=")">)</button>
-            <button type="button" class="key" data-insert="7">7</button>
-            <button type="button" class="key" data-insert="8">8</button>
-            <button type="button" class="key" data-insert="9">9</button>
-            <button type="button" class="key op" data-insert="/">÷</button>
-
-            <button type="button" class="key op" data-insert="^">xʸ</button>
-            <button type="button" class="key" data-insert="4">4</button>
-            <button type="button" class="key" data-insert="5">5</button>
-            <button type="button" class="key" data-insert="6">6</button>
-            <button type="button" class="key op" data-insert="*">×</button>
-
-            <button type="button" class="key op" data-insert="sqrt(">√</button>
-            <button type="button" class="key" data-insert="1">1</button>
-            <button type="button" class="key" data-insert="2">2</button>
-            <button type="button" class="key" data-insert="3">3</button>
-            <button type="button" class="key op" data-insert="+">+</button>
-
-            <button type="button" class="key op" data-insert="-">-</button>
-            <button type="button" class="key" data-insert="0">0</button>
-            <button type="button" class="key" data-insert=".">.</button>
-            <button type="button" class="key op" data-insert="pi">π</button>
-            <button type="button" class="key op" data-action="backspace">DEL</button>
-
-            <button type="button" class="key clear" data-action="clear">AC</button>
-            <button type="button" class="key enter" data-action="calculate" style="grid-column: span 4;">=</button>
-        </div>
-        
-        <div class="resize-handle" id="resize-handle"></div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
-```
-
-### 2. `style.css`
-```css
-:root {
-    --bg-app: #f1f5f9;
-    --calc-width-desktop: 340px;
-    --calc-height-mobile-collapsed: 60px;
-    --calc-bg: #1e293b;
-    --calc-surface: #334155;
-    --screen-bg: #0f172a;
-    --screen-text: #22d3ee;
-    --btn-bg: #475569;
-    --btn-shadow: #1e293b;
-    --btn-active: #0ea5e9;
-    --text-primary: #0f172a;
-    --text-secondary: #334155;
-    --panel-bg: rgba(255, 255, 255, 0.9);
-}
-
-:root.dark-mode {
-    --bg-app: #0f172a;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --panel-bg: rgba(30, 41, 59, 0.9);
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-body {
-    font-family: 'Inter', sans-serif; width: 100vw; height: 100vh;
-    background-color: var(--bg-app); overflow: hidden; display: flex;
-    position: relative; transition: background-color 0.3s ease;
-}
-
-/* PANTALLA DE INICIO */
-#splash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.6s ease, visibility 0.6s ease; }
-#splash-screen.hidden { opacity: 0; visibility: hidden; }
-.splash-content { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 30px; }
-.splash-img { max-width: 90%; max-height: 50vh; width: auto; height: auto; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-.login-box { background: rgba(30, 41, 59, 0.8); padding: 25px 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(8px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
-.login-box h2 { color: #ffffff; text-align: center; font-size: 1.4rem; font-weight: 700; }
-.login-subtitle { color: #94a3b8; text-align: center; font-size: 0.8rem; margin-top: -8px; margin-bottom: 5px; }
-#email-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #ffffff; font-size: 1rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; }
-#email-input:focus { border-color: #006847; }
-#email-input::placeholder { color: #64748b; }
-.start-btn { padding: 12px 60px; font-size: 1.1rem; font-weight: 700; color: #ffffff; background-color: #006847; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.2s, background-color 0.2s; font-family: 'Inter', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-.start-btn:hover { background-color: #004d33; transform: scale(1.02); }
-.start-btn:active { transform: scale(0.98); }
-.error-msg { color: #ef4444; font-size: 0.85rem; text-align: center; display: none; font-weight: 500; }
-
-/* LIENZO Y HUD */
-#viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-.hud-overlay { position: absolute; top: 20px; left: 20px; z-index: 5; pointer-events: none; }
-.mode-badge { background: var(--panel-bg); padding: 8px 16px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px); transition: background 0.3s, color 0.3s; }
-.mode-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; transition: background 0.3s; }
-
-/* Botones Superiores */
-.top-control-btn { position: absolute; top: 20px; z-index: 10; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--panel-bg); color: var(--text-secondary); font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s, background 0.3s; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; }
-.top-control-btn:active { transform: scale(0.9); }
-#theme-toggle { right: 20px; }
-#calc-toggle { right: 70px; }
-#screenshot-btn { right: 120px; }
-#video-btn { right: 170px; }
-#play-btn { right: 220px; }
-#video-btn.recording { background: #ef4444; color: white; animation: pulse-rec 1s infinite; }
-@keyframes pulse-rec { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-.tooltip { position: absolute; background: rgba(15, 23, 42, 0.95); color: white; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; pointer-events: none; z-index: 20; display: none; border: 1px solid rgba(255,255,255,0.1); transform: translate(15px, 15px); }
-
-/* CALCULADORA */
-.calculator-container { position: absolute; width: var(--calc-width-desktop); min-width: 300px; min-height: 500px; max-width: 95vw; max-height: 95vh; background: var(--calc-bg); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); z-index: 100; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); top: 20px; right: 270px; transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease, opacity 0.4s ease; }
-.calculator-container.pulse { animation: pulse-anim 0.3s ease-out; }
-@keyframes pulse-anim { 0% { box-shadow: 0 20px 50px rgba(0,0,0,0.3); } 50% { box-shadow: 0 20px 60px rgba(34, 211, 238, 0.5); } 100% { box-shadow: 0 20px 50px rgba(0,0,0,0.3); } }
-.calculator-container.hidden-calc { opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(50px) scale(0.9); }
-
-.calc-header { background: var(--calc-surface); padding: 12px 16px; cursor: grab; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); user-select: none; flex-shrink: 0; }
-.calc-header:active { cursor: grabbing; }
-.header-inner { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center; }
-.header-title { color: #94a3b8; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-.header-controls { display: flex; gap: 8px; }
-.win-btn { width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: none; cursor: pointer; }
-
-.screen-container { padding: 16px; background: var(--screen-bg); border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
-.screen-label { color: #64748b; font-size: 0.7rem; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
-.screen-output { color: var(--screen-text); font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; min-height: 1.4em; max-height: 4.2em; overflow-y: auto; word-break: break-all; text-shadow: 0 0 10px rgba(34, 211, 238, 0.3); }
-.screen-output::-webkit-scrollbar { display: none; }
-.screen-output.error { color: #f87171; text-shadow: none; }
-.cursor { display: inline-block; width: 2px; height: 1.2em; background: var(--screen-text); animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 2px; }
-@keyframes blink { 50% { opacity: 0; } }
-
-.controls-area { padding: 12px 16px; flex-shrink: 0; }
-.dropdown-container { position: relative; margin-bottom: 12px; width: 100%; }
-.examples-btn { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; font-family: 'Inter', sans-serif; font-size: 0.9rem; transition: background 0.2s; }
-.examples-btn:hover { background: rgba(0,0,0,0.5); }
-.examples-dropdown { display: none; position: absolute; top: 105%; left: 0; width: 100%; background: #0f172a; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 110; max-height: 250px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); }
-.examples-dropdown.show { display: block; }
-.examples-dropdown::-webkit-scrollbar { width: 4px; }
-.examples-dropdown::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
-.examples-item { padding: 10px 16px; color: #cbd5e1; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; transition: background 0.2s, color 0.2s; }
-.examples-item:last-child { border-bottom: none; }
-.examples-item:hover { background: #1e293b; color: var(--screen-text); }
-
-.view-toggle { display: flex; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 4px; margin-bottom: 12px; }
-.toggle-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; }
-.toggle-btn.active { background: var(--btn-active); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-.color-selector { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.8rem; color: #cbd5e1; }
-.color-options { display: flex; gap: 8px; }
-.color-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
-.color-btn.active { border-color: white; transform: scale(1.1); }
-.color-btn.green { background: #006847; }
-.color-btn.yellow { background: #FFD700; }
-.color-btn.blue { background: #0033A0; }
-
-.slider-group { margin-bottom: 12px; }
-.slider-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; color: #cbd5e1; }
-input[type=range] { width: 100%; height: 4px; background: #475569; border-radius: 2px; appearance: none; -webkit-appearance: none; outline: none; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--screen-text); cursor: pointer; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
-input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; border-radius: 50%; background: var(--screen-text); cursor: pointer; }
-
-.keypad { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(40px, 1fr); gap: 8px; padding: 16px; background: var(--calc-surface); border-top: 1px solid rgba(255,255,255,0.05); min-height: 0; overflow-y: auto; }
-.keypad::-webkit-scrollbar { width: 6px; }
-.keypad::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-.key { background: var(--btn-bg); border: none; border-radius: 8px; color: #f1f5f9; font-size: 1rem; cursor: pointer; transition: transform 0.1s, background 0.2s; display: flex; align-items: center; justify-content: center; font-weight: 500; box-shadow: 0 4px 0 var(--btn-shadow); position: relative; top: 0; font-family: 'Inter', sans-serif; }
-.key:active { top: 4px; box-shadow: 0 0 0 var(--btn-shadow); background: #334155; }
-.key.func { color: #60a5fa; font-size: 0.85rem; }
-.key.op { color: #fbbf24; font-size: 1.1rem; }
-.key.clear { background: #ef4444; box-shadow: 0 4px 0 #b91c1c; color: white; font-weight: bold; }
-.key.clear:active { box-shadow: 0 0 0 #b91c1c; }
-.key.enter { background: var(--screen-text); color: #0f172a; box-shadow: 0 4px 0 #0891b2; font-weight: bold; font-size: 1.2rem; }
-.key.enter:active { box-shadow: 0 0 0 #0891b2; }
-
-.resize-handle { position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; cursor: nwse-resize; z-index: 101; display: none; }
-.resize-handle::after { content: ''; position: absolute; bottom: 4px; right: 4px; width: 8px; height: 8px; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; }
-@media (min-width: 769px) { .resize-handle { display: block; } }
-
-/* RESPONSIVE MÓVIL */
-@media (max-width: 768px) {
-    body { flex-direction: column; }
-    .calculator-container { width: 100%; height: var(--calc-height-mobile-collapsed); min-width: 100%; min-height: 60px; max-height: 100vh; top: auto; bottom: 0; right: 0; left: 0; border-radius: 16px 16px 0 0; transform: none !important; }
-    .calculator-container.expanded { height: 92vh; }
-    .calculator-container.hidden-calc { transform: translateY(100%) !important; opacity: 1; visibility: hidden; pointer-events: none; }
-
-    .calc-header { cursor: default; justify-content: center; position: relative; padding: 10px 16px; }
-    .mobile-drag-handle { display: block !important; width: 40px; height: 5px; background: #64748b; border-radius: 3px; margin-bottom: 4px; }
-    .header-title { display: none; }
-    .header-controls { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
-    
-    .top-control-btn { top: 15px; width: 35px; height: 35px; font-size: 1rem; }
-    #theme-toggle { right: 15px; }
-    #calc-toggle { right: 60px; }
-    #screenshot-btn { right: 105px; }
-    #video-btn { right: 150px; }
-    #play-btn { right: 195px; }
-
-    .screen-container { padding: 10px 16px; }
-    .screen-output { font-size: 1.1rem; }
-    .controls-area { padding: 8px 12px; }
-    .dropdown-container { margin-bottom: 8px; }
-    .examples-btn { padding: 8px; font-size: 0.85rem; }
-    .view-toggle { margin-bottom: 8px; padding: 3px; }
-    .toggle-btn { padding: 6px; font-size: 0.8rem; }
-    .color-selector { margin-bottom: 8px; }
-    .slider-group { margin-bottom: 8px; }
-    .keypad { flex: 1; min-height: 0; gap: 6px; padding: 10px; grid-auto-rows: 1fr; overflow-y: auto; }
-    .key { min-height: 35px; font-size: 0.9rem; }
-    .key.func { font-size: 0.8rem; }
-    .key.op { font-size: 1rem; }
-    .key.enter { font-size: 1.1rem; }
-    
-    .splash-img { max-height: 40vh; }
-    .login-box { padding: 20px; }
-}
-```
-
-### 3. `script.js`
-```javascript
 // =========================================
 // ESTADO GLOBAL DE LA APLICACIÓN
 // =========================================
@@ -403,12 +59,23 @@ function attemptLogin() {
     if (AppState.hasStarted) return;
     const email = els.emailInput.value.trim().toLowerCase();
     
-    if (email.endsWith('@juventud.edu.mx')) {
+    // Validación flexible: solo necesita contener el dominio institucional
+    if (email.includes('@juventud.edu.mx')) {
         AppState.hasStarted = true;
         els.errorMsg.style.display = 'none';
-        els.splash.classList.add('hidden');
-        setTimeout(() => els.splash.style.display = 'none', 600);
-        initCalculator();
+        
+        // Ocultar splash screen
+        els.splash.style.opacity = '0';
+        els.splash.style.pointerEvents = 'none';
+        setTimeout(() => { els.splash.style.display = 'none'; }, 600);
+
+        // Iniciar calculadora de forma segura
+        try {
+            initCalculator();
+        } catch (e) {
+            console.error("Error al inicializar la calculadora:", e);
+            alert("Hubo un problema al cargar el motor gráfico. Revisa la consola (F12).");
+        }
     } else {
         els.errorMsg.style.display = 'block';
         els.emailInput.value = '';
@@ -416,6 +83,7 @@ function attemptLogin() {
     }
 }
 
+// Listeners de inicio garantizados
 els.startBtn.addEventListener('click', attemptLogin);
 els.emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin(); });
 
@@ -874,4 +542,3 @@ function animate() {
     
     renderer.render(scene, camera);
 }
-```
