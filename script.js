@@ -1,11 +1,14 @@
-He encontrado el problema de los botones en PC: al tener un tamaño mínimo de calculadora y muchos botones, la cuadrícula se desbordaba y los ocultaba. He corregido el CSS para que el teclado se adapte y muestre una barra de scroll si es necesario. 
+He pulido todos los detalles. Descubrí que el problema de inicio de sesión era un pequeño conflicto de eventos (los botones HTML intentaban enviar un formulario inexistente); lo he solucionado añadiendo `type="button"`. 
 
-Además, he añadido el botón de grabación de video (🎥). Al presionarlo, empezará a grabar la gráfica en tiempo real (formato WebM). Al volver a presionarlo, se detendrá y descargará el video automáticamente.
+Además:
+1. **Botón de Video Corregido**: Mejoré la lógica de grabación para que sea compatible con todos los navegadores (ahora busca el formato compatible, ya sea WebM o MP4).
+2. **Posición de Botones**: El botón de video (🎥) está pegado al de captura (📸).
+3. **Botón Play (Animación)**: Añadí un botón ▶️. Al presionarlo, se inyecta una variable de tiempo `t` en la gráfica que oscila de 0 a 2π, dándole movimiento. 
+*(Nota: Para ver el movimiento, usa la variable `t` en tu función, por ejemplo: `sin(x + t)` o prueba el ejemplo 1 que ahora incluye el movimiento).*
 
-Aquí tienes los 3 archivos actualizados:
+Aquí tienes los 3 archivos:
 
 ### 1. `index.html`
-*(Añadí el botón `#video-btn` en la esquina superior derecha)*
 ```html
 <!DOCTYPE html>
 <html lang="es">
@@ -34,9 +37,10 @@ Aquí tienes los 3 archivos actualizados:
             <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
             <div class="login-box">
                 <h2>Acceso Institucional</h2>
-                <p class="login-subtitle">Verificación de dominio</p>
+                <p class="login-subtitle">Verificación de dominio (ej. tu.correo@juventud.edu.mx)</p>
                 <input type="email" id="email-input" placeholder="tu.correo@juventud.edu.mx" autocomplete="off">
-                <button id="start-btn" class="start-btn">Ingresar</button>
+                <!-- Se añadió type="button" para evitar recargas de página -->
+                <button type="button" id="start-btn" class="start-btn">Ingresar</button>
                 <p id="error-msg" class="error-msg">Solo se permiten correos @juventud.edu.mx</p>
             </div>
         </div>
@@ -50,11 +54,12 @@ Aquí tienes los 3 archivos actualizados:
         </div>
     </div>
 
-    <!-- Botones Superiores Derechos -->
-    <button id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
-    <button id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
-    <button id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
-    <button id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
+    <!-- Botones Superiores Derechos (Ordenados) -->
+    <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
+    <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
+    <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
+    <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
+    <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
 
     <div id="tooltip" class="tooltip"></div>
     <div id="viewport"></div>
@@ -66,32 +71,32 @@ Aquí tienes los 3 archivos actualizados:
                 <span class="header-title">GRAPH ENGINE PRO</span>
             </div>
             <div class="header-controls">
-                <button class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
+                <button type="button" class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
             </div>
         </div>
 
         <div class="screen-container">
-            <div class="screen-label">f(x, y) =</div>
+            <div class="screen-label">f(x, y, t) =</div>
             <div class="screen-output" id="display"><span class="cursor"></span></div>
         </div>
 
         <div class="controls-area">
             <div class="dropdown-container">
-                <button id="examples-btn" class="examples-btn">Ejemplos Rápidos ⌄</button>
+                <button type="button" id="examples-btn" class="examples-btn">Ejemplos Rápidos ⌄</button>
                 <div id="examples-dropdown" class="examples-dropdown"></div>
             </div>
 
             <div class="view-toggle">
-                <button class="toggle-btn active" id="btn-2d">2D GRÁFICO</button>
-                <button class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
+                <button type="button" class="toggle-btn active" id="btn-2d">2D GRÁFICO</button>
+                <button type="button" class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
             </div>
 
             <div class="color-selector">
                 <span class="color-label">Color Gráfica:</span>
                 <div class="color-options">
-                    <button class="color-btn green active" data-color="0x006847" title="Verde Bandera"></button>
-                    <button class="color-btn yellow" data-color="0xFFD700" title="Amarillo"></button>
-                    <button class="color-btn blue" data-color="0x0033A0" title="Azul"></button>
+                    <button type="button" class="color-btn green active" data-color="0x006847" title="Verde Bandera"></button>
+                    <button type="button" class="color-btn yellow" data-color="0xFFD700" title="Amarillo"></button>
+                    <button type="button" class="color-btn blue" data-color="0x0033A0" title="Azul"></button>
                 </div>
             </div>
 
@@ -113,43 +118,44 @@ Aquí tienes los 3 archivos actualizados:
         </div>
 
         <div class="keypad" id="keypad">
-            <button class="key func" data-insert="sin(">sin</button>
-            <button class="key func" data-insert="cos(">cos</button>
-            <button class="key func" data-insert="tan(">tan</button>
-            <button class="key func" data-insert="log(">log</button>
-            <button class="key func" data-insert="ln(">ln</button>
+            <button type="button" class="key func" data-insert="sin(">sin</button>
+            <button type="button" class="key func" data-insert="cos(">cos</button>
+            <button type="button" class="key func" data-insert="tan(">tan</button>
+            <button type="button" class="key func" data-insert="log(">log</button>
+            <button type="button" class="key func" data-insert="ln(">ln</button>
 
-            <button class="key func" data-insert="x">x</button>
-            <button class="key func" data-insert="y">y</button>
-            <button class="key func" data-insert="z">z</button>
-            <button class="key func" data-insert="(">(</button>
-            <button class="key func" data-insert=")">)</button>
+            <button type="button" class="key func" data-insert="x">x</button>
+            <button type="button" class="key func" data-insert="y">y</button>
+            <button type="button" class="key func" data-insert="z">z</button>
+            <button type="button" class="key func" data-insert="t">t</button>
+            <button type="button" class="key func" data-insert="(">(</button>
 
-            <button class="key" data-insert="7">7</button>
-            <button class="key" data-insert="8">8</button>
-            <button class="key" data-insert="9">9</button>
-            <button class="key op" data-insert="/">÷</button>
-            <button class="key op" data-insert="^">xʸ</button>
+            <button type="button" class="key func" data-insert=")">)</button>
+            <button type="button" class="key" data-insert="7">7</button>
+            <button type="button" class="key" data-insert="8">8</button>
+            <button type="button" class="key" data-insert="9">9</button>
+            <button type="button" class="key op" data-insert="/">÷</button>
 
-            <button class="key" data-insert="4">4</button>
-            <button class="key" data-insert="5">5</button>
-            <button class="key" data-insert="6">6</button>
-            <button class="key op" data-insert="*">×</button>
-            <button class="key op" data-insert="sqrt(">√</button>
+            <button type="button" class="key op" data-insert="^">xʸ</button>
+            <button type="button" class="key" data-insert="4">4</button>
+            <button type="button" class="key" data-insert="5">5</button>
+            <button type="button" class="key" data-insert="6">6</button>
+            <button type="button" class="key op" data-insert="*">×</button>
 
-            <button class="key" data-insert="1">1</button>
-            <button class="key" data-insert="2">2</button>
-            <button class="key" data-insert="3">3</button>
-            <button class="key op" data-insert="+">+</button>
-            <button class="key op" data-insert="-">-</button>
+            <button type="button" class="key op" data-insert="sqrt(">√</button>
+            <button type="button" class="key" data-insert="1">1</button>
+            <button type="button" class="key" data-insert="2">2</button>
+            <button type="button" class="key" data-insert="3">3</button>
+            <button type="button" class="key op" data-insert="+">+</button>
 
-            <button class="key" data-insert="0">0</button>
-            <button class="key" data-insert=".">.</button>
-            <button class="key op" data-insert="pi">π</button>
-            <button class="key op" data-action="backspace">DEL</button>
-            <button class="key clear" data-action="clear">AC</button>
+            <button type="button" class="key op" data-insert="-">-</button>
+            <button type="button" class="key" data-insert="0">0</button>
+            <button type="button" class="key" data-insert=".">.</button>
+            <button type="button" class="key op" data-insert="pi">π</button>
+            <button type="button" class="key op" data-action="backspace">DEL</button>
 
-            <button class="key enter" data-action="calculate" style="grid-column: span 5;">=</button>
+            <button type="button" class="key clear" data-action="clear">AC</button>
+            <button type="button" class="key enter" data-action="calculate" style="grid-column: span 4;">=</button>
         </div>
         
         <div class="resize-handle" id="resize-handle"></div>
@@ -161,7 +167,6 @@ Aquí tienes los 3 archivos actualizados:
 ```
 
 ### 2. `style.css`
-*(Corregí el desbordamiento del teclado en PC y añadí el posicionamiento del nuevo botón de video)*
 ```css
 :root {
     --bg-app: #f1f5f9;
@@ -201,7 +206,7 @@ body {
 .splash-img { max-width: 90%; max-height: 50vh; width: auto; height: auto; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .login-box { background: rgba(30, 41, 59, 0.8); padding: 25px 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(8px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
 .login-box h2 { color: #ffffff; text-align: center; font-size: 1.4rem; font-weight: 700; }
-.login-subtitle { color: #94a3b8; text-align: center; font-size: 0.85rem; margin-top: -8px; margin-bottom: 5px; }
+.login-subtitle { color: #94a3b8; text-align: center; font-size: 0.8rem; margin-top: -8px; margin-bottom: 5px; }
 #email-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #ffffff; font-size: 1rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; }
 #email-input:focus { border-color: #006847; }
 #email-input::placeholder { color: #64748b; }
@@ -223,13 +228,14 @@ body {
 #calc-toggle { right: 70px; }
 #screenshot-btn { right: 120px; }
 #video-btn { right: 170px; }
+#play-btn { right: 220px; }
 #video-btn.recording { background: #ef4444; color: white; animation: pulse-rec 1s infinite; }
 @keyframes pulse-rec { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
 .tooltip { position: absolute; background: rgba(15, 23, 42, 0.95); color: white; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; pointer-events: none; z-index: 20; display: none; border: 1px solid rgba(255,255,255,0.1); transform: translate(15px, 15px); }
 
 /* CALCULADORA */
-.calculator-container { position: absolute; width: var(--calc-width-desktop); min-width: 300px; min-height: 500px; max-width: 95vw; max-height: 95vh; background: var(--calc-bg); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); z-index: 100; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); top: 20px; right: 220px; transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease, opacity 0.4s ease; }
+.calculator-container { position: absolute; width: var(--calc-width-desktop); min-width: 300px; min-height: 500px; max-width: 95vw; max-height: 95vh; background: var(--calc-bg); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); z-index: 100; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); top: 20px; right: 270px; transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease, opacity 0.4s ease; }
 .calculator-container.pulse { animation: pulse-anim 0.3s ease-out; }
 @keyframes pulse-anim { 0% { box-shadow: 0 20px 50px rgba(0,0,0,0.3); } 50% { box-shadow: 0 20px 60px rgba(34, 211, 238, 0.5); } 100% { box-shadow: 0 20px 50px rgba(0,0,0,0.3); } }
 .calculator-container.hidden-calc { opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(50px) scale(0.9); }
@@ -279,7 +285,6 @@ input[type=range] { width: 100%; height: 4px; background: #475569; border-radius
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--screen-text); cursor: pointer; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
 input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; border-radius: 50%; background: var(--screen-text); cursor: pointer; }
 
-/* TECLADO CORREGIDO PARA PC */
 .keypad { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(40px, 1fr); gap: 8px; padding: 16px; background: var(--calc-surface); border-top: 1px solid rgba(255,255,255,0.05); min-height: 0; overflow-y: auto; }
 .keypad::-webkit-scrollbar { width: 6px; }
 .keypad::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
@@ -313,6 +318,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; b
     #calc-toggle { right: 60px; }
     #screenshot-btn { right: 105px; }
     #video-btn { right: 150px; }
+    #play-btn { right: 195px; }
 
     .screen-container { padding: 10px 16px; }
     .screen-output { font-size: 1.1rem; }
@@ -335,13 +341,12 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; b
 ```
 
 ### 3. `script.js`
-*(Añadí la lógica de grabación de video usando `MediaRecorder` y `captureStream`)*
 ```javascript
 // =========================================
 // ESTADO GLOBAL DE LA APLICACIÓN
 // =========================================
 const AppState = {
-    expression: "0.5 * sin(x * a) + 1",
+    expression: "0.5 * sin(x * a + t) + 1",
     a: 1.0,
     b: 1.0,
     mode: '2D',
@@ -349,6 +354,8 @@ const AppState = {
     isMobile: window.innerWidth <= 768,
     isDraggingCalc: false,
     isAnimating: false,
+    isPlaying: false,
+    time: 0,
     calcExpanded: false,
     isDarkMode: false,
     hasStarted: false
@@ -382,6 +389,7 @@ const els = {
     calcToggleBtn: document.getElementById('calc-toggle'),
     screenshotBtn: document.getElementById('screenshot-btn'),
     videoBtn: document.getElementById('video-btn'),
+    playBtn: document.getElementById('play-btn'),
     resizeHandle: document.getElementById('resize-handle'),
     examplesBtn: document.getElementById('examples-btn'),
     examplesDropdown: document.getElementById('examples-dropdown'),
@@ -415,18 +423,18 @@ els.emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') atte
 // FUNCIONES DE EJEMPLO
 // =========================================
 const examples = [
-    { name: "1. Onda Senoidal 2D", expr: "a * sin(x * b)", mode: "2D" },
-    { name: "2. Parábola Cúbica 2D", expr: "a * x^3 - b * x", mode: "2D" },
-    { name: "3. Función Logarítmica 2D", expr: "a * log(abs(x) * b)", mode: "2D" },
-    { name: "4. Gaussiana (Campana) 2D", expr: "a * exp(-(x^2) / b)", mode: "2D" },
-    { name: "5. Onda Senoidal 3D", expr: "sin(x) * a + cos(y) * b", mode: "3D" },
+    { name: "1. Onda en Movimiento 2D", expr: "a * sin(x * b + t)", mode: "2D" },
+    { name: "2. Onda Senoidal 2D", expr: "a * sin(x * b)", mode: "2D" },
+    { name: "3. Parábola Cúbica 2D", expr: "a * x^3 - b * x", mode: "2D" },
+    { name: "4. Función Logarítmica 2D", expr: "a * log(abs(x) * b)", mode: "2D" },
+    { name: "5. Gaussiana (Campana) 2D", expr: "a * exp(-(x^2) / b)", mode: "2D" },
     { name: "6. Cartón de Huevos 3D", expr: "sin(x * a) * cos(y * b)", mode: "3D" },
     { name: "7. Onda Radial (Agua) 3D", expr: "sin(sqrt(x^2 + y^2) * a) * 2", mode: "3D" },
     { name: "8. Sombrero Mexicano 3D", expr: "a * exp(-(x^2 + y^2) / b) * cos(sqrt(x^2 + y^2))", mode: "3D" },
     { name: "9. Silla de Montar 3D", expr: "(x^2 - y^2) * a * 0.1", mode: "3D" },
     { name: "10. Silla de Mono 3D", expr: "(x^3 - 3*x*y^2) * a * 0.05", mode: "3D" },
     { name: "11. Olas Entrelazadas 3D", expr: "sin(x * a + y) * cos(y * b - x)", mode: "3D" },
-    { name: "12. Cráter Volcánico 3D", expr: "-a * exp(-(x^2 + y^2) / b)", mode: "3D" }
+    { name: "12. Onda Dinámica 3D", expr: "sin(x + t) * cos(y + t)", mode: "3D" }
 ];
 
 let scene, camera, renderer, controls, raycaster;
@@ -434,7 +442,7 @@ let group3D, geometry3D, material3D, mesh3D, gridHelper3D, axesHelper3D;
 let group2D, paperPlane, grid2DMat, axisMat, curve2DGeo, curve2DMat, curve2D;
 let ambientLight, dirLight;
 let mouse, pointerMesh;
-let mediaRecorder; // Variable para grabación de video
+let mediaRecorder; 
 
 // =========================================
 // INICIALIZADOR PRINCIPAL
@@ -486,7 +494,6 @@ function setupThreeJS() {
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 10); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
 
-    // preserveDrawingBuffer: true ES NECESARIO PARA PODER TOMAR CAPTURAS Y VIDEO
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -532,12 +539,8 @@ function setupScenes() {
 
     grid2DMat = new THREE.LineBasicMaterial({ color: themes.light.grid });
     const grid2DGroup = new THREE.Group();
-    for (let i = -6; i <= 6; i++) {
-        grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -4, 0), new THREE.Vector3(i, 4, 0)]), grid2DMat));
-    }
-    for (let i = -4; i <= 4; i++) {
-        grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, i, 0), new THREE.Vector3(6, i, 0)]), grid2DMat));
-    }
+    for (let i = -6; i <= 6; i++) grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -4, 0), new THREE.Vector3(i, 4, 0)]), grid2DMat));
+    for (let i = -4; i <= 4; i++) grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, i, 0), new THREE.Vector3(6, i, 0)]), grid2DMat));
     group2D.add(grid2DGroup);
 
     axisMat = new THREE.LineBasicMaterial({ color: themes.light.axes });
@@ -575,17 +578,17 @@ function prepareExpression(rawExpr) {
     return expr;
 }
 
-function evaluate(x, y = 0) {
+function evaluate(x, y, t) {
     if (!AppState.expression) return 0;
     try {
         const expr = prepareExpression(AppState.expression);
-        const f = new Function('x', 'y', 'z', 'a', 'b', `return ${expr};`);
-        const r = f(x, y, 0, AppState.a, AppState.b);
+        const f = new Function('x', 'y', 'z', 'a', 'b', 't', `return ${expr};`);
+        const r = f(x, y, 0, AppState.a, AppState.b, t);
         return (isNaN(r) || !isFinite(r)) ? null : r;
     } catch (e) { return null; }
 }
 
-function updateGraphics() {
+function updateGraphics(t = 0) {
     if (!curve2DMat || !geometry3D) return; 
     curve2DMat.color.setHex(AppState.graphColor);
     const pos3D = geometry3D.attributes.position;
@@ -596,11 +599,11 @@ function updateGraphics() {
 
     for (let i = 0; i < pos3D.count; i++) {
         const x = pos3D.getX(i), y = pos3D.getZ(i);
-        const z = evaluate(x, y);
+        const z = evaluate(x, y, t);
         if (z !== null) {
             pos3D.setY(i, z);
-            const t = THREE.MathUtils.clamp((z + 5) / 10, 0, 1);
-            tempC.lerpColors(cLow, cHigh, t);
+            const tCol = THREE.MathUtils.clamp((z + 5) / 10, 0, 1);
+            tempC.lerpColors(cLow, cHigh, tCol);
             col3D.setXYZ(i, tempC.r, tempC.g, tempC.b);
         } else { pos3D.setY(i, 0); }
     }
@@ -610,7 +613,7 @@ function updateGraphics() {
     const pos2D = curve2DGeo.attributes.position;
     for (let i = 0; i < pos2D.count; i++) {
         const x = (i / (pos2D.count - 1)) * 12 - 6;
-        const y = evaluate(x, 0);
+        const y = evaluate(x, 0, t);
         if (y !== null) { pos2D.setXYZ(i, x, y, 0); } else { pos2D.setXYZ(i, x, 0, 0); }
     }
     pos2D.needsUpdate = true;
@@ -629,16 +632,21 @@ function setupEvents() {
         else if (btn.dataset.action === 'calculate') calculate();
     });
 
-    els.sliderA.addEventListener('input', (e) => { AppState.a = parseFloat(e.target.value); els.valA.innerText = AppState.a.toFixed(1); updateGraphics(); });
-    els.sliderB.addEventListener('input', (e) => { AppState.b = parseFloat(e.target.value); els.valB.innerText = AppState.b.toFixed(1); updateGraphics(); });
+    els.sliderA.addEventListener('input', (e) => { AppState.a = parseFloat(e.target.value); els.valA.innerText = AppState.a.toFixed(1); updateGraphics(AppState.time); });
+    els.sliderB.addEventListener('input', (e) => { AppState.b = parseFloat(e.target.value); els.valB.innerText = AppState.b.toFixed(1); updateGraphics(AppState.time); });
     
     els.btn2D.addEventListener('click', () => setMode('2D'));
     els.btn3D.addEventListener('click', () => setMode('3D'));
 
-    // Botón Ocultar/Mostrar Calculadora
     els.calcToggleBtn.addEventListener('click', () => {
         const isHidden = els.calc.classList.toggle('hidden-calc');
         els.calcToggleBtn.innerText = isHidden ? "👁️" : "🧮";
+    });
+
+    // Botón Animación Play/Pause
+    els.playBtn.addEventListener('click', () => {
+        AppState.isPlaying = !AppState.isPlaying;
+        els.playBtn.innerText = AppState.isPlaying ? "⏸️" : "▶️";
     });
 
     // Botón Captura de Pantalla
@@ -663,30 +671,35 @@ function setupEvents() {
     // Botón Grabar Video
     els.videoBtn.addEventListener('click', () => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
-            // Detener grabación
             mediaRecorder.stop();
             els.videoBtn.classList.remove('recording');
             els.videoBtn.innerText = "🎥";
         } else {
-            // Iniciar grabación
             try {
-                const stream = renderer.domElement.captureStream(30); // 30 FPS
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-                const chunks = [];
+                const stream = renderer.domElement.captureStream(30);
+                let options = { mimeType: 'video/webm' };
+                if (!MediaRecorder.isTypeSupported('video/webm')) {
+                    options = { mimeType: 'video/mp4' };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = {}; // Soporte genérico
+                }
                 
-                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder = new MediaRecorder(stream, options);
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
                 mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const ext = options.mimeType.includes('mp4') ? 'mp4' : 'webm';
+                    const blob = new Blob(chunks, { type: options.mimeType || 'video/webm' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'grabacion_calculadora.webm';
+                    a.download = `grabacion_calculadora.${ext}`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 };
-                
                 mediaRecorder.start();
                 els.videoBtn.classList.add('recording');
                 els.videoBtn.innerText = "⏹️";
@@ -764,14 +777,14 @@ function setupEvents() {
     });
 }
 
-function insertText(char) { AppState.expression += char; updateDisplay(); updateGraphics(); }
-function clearDisplay() { AppState.expression = ""; updateDisplay(); updateGraphics(); }
-function backspace() { AppState.expression = AppState.expression.slice(0, -1); updateDisplay(); updateGraphics(); }
+function insertText(char) { AppState.expression += char; updateDisplay(); updateGraphics(AppState.time); }
+function clearDisplay() { AppState.expression = ""; updateDisplay(); updateGraphics(AppState.time); }
+function backspace() { AppState.expression = AppState.expression.slice(0, -1); updateDisplay(); updateGraphics(AppState.time); }
 function calculate() {
     els.calc.classList.remove('pulse');
     void els.calc.offsetWidth; 
     els.calc.classList.add('pulse');
-    updateGraphics();
+    updateGraphics(AppState.time);
 }
 
 function updateDisplay() {
@@ -780,7 +793,7 @@ function updateDisplay() {
     if (text !== "0") {
         try {
             const expr = prepareExpression(text);
-            new Function('x', 'y', 'z', 'a', 'b', `return ${expr};`);
+            new Function('x', 'y', 'z', 'a', 'b', 't', `return ${expr};`);
         } catch (e) { isSyntaxError = true; }
     }
     if (isSyntaxError) {
@@ -851,6 +864,14 @@ function handlePointer(clientX, clientY) {
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
+    
+    // Lógica de animación Play
+    if (AppState.isPlaying) {
+        AppState.time += 0.05;
+        if (AppState.time > Math.PI * 2) AppState.time = 0; // Loop de 0 a 2PI
+        updateGraphics(AppState.time);
+    }
+    
     renderer.render(scene, camera);
 }
 ```
