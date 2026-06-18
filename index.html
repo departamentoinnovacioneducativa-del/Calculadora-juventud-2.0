@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Calculadora Gráfica Institucional</title>
     
-    <!-- Precargar imagen para que aparezca al instante -->
     <link rel="preload" as="image" href="Calculadora.jpg">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,11 +19,18 @@
 </head>
 <body>
 
-    <!-- Pantalla de Inicio (Splash Screen) -->
+    <!-- Pantalla de Inicio (Splash Screen con Autenticación) -->
     <div id="splash-screen">
         <div class="splash-content">
             <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
-            <button id="start-btn" class="start-btn">COMENZAR</button>
+            
+            <div class="login-box">
+                <h2>Acceso Institucional</h2>
+                <p class="login-subtitle">Verificación de dominio</p>
+                <input type="email" id="email-input" placeholder="tu.correo@juventud.edu.mx" autocomplete="off">
+                <button id="start-btn" class="start-btn">Ingresar</button>
+                <p id="error-msg" class="error-msg">Solo se permiten correos @juventud.edu.mx</p>
+            </div>
         </div>
     </div>
 
@@ -36,7 +42,11 @@
         </div>
     </div>
 
-    <button id="theme-toggle" class="theme-btn" aria-label="Cambiar tema">🌙</button>
+    <!-- Botones Superiores Derechos -->
+    <button id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
+    <button id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
+    <button id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
+
     <div id="tooltip" class="tooltip"></div>
     <div id="viewport"></div>
 
