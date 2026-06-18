@@ -11,7 +11,8 @@ const AppState = {
     isDraggingCalc: false,
     isAnimating: false,
     calcExpanded: false,
-    isDarkMode: false
+    isDarkMode: false,
+    hasStarted: false
 };
 
 const themes = {
@@ -46,9 +47,17 @@ const els = {
 // =========================================
 // PANTALLA DE INICIO (SPLASH SCREEN)
 // =========================================
+// No inicializamos nada hasta que se haga clic
 els.startBtn.addEventListener('click', () => {
+    if (AppState.hasStarted) return;
+    AppState.hasStarted = true;
+    
+    // Ocultar splash
     els.splash.classList.add('hidden');
     setTimeout(() => els.splash.style.display = 'none', 600);
+
+    // Iniciar la calculadora
+    initCalculator();
 });
 
 // =========================================
@@ -69,230 +78,98 @@ const examples = [
     { name: "12. Cráter Volcánico 3D", expr: "-a * exp(-(x^2 + y^2) / b)", mode: "3D" }
 ];
 
-examples.forEach(ex => {
-    const item = document.createElement('div');
-    item.className = 'examples-item';
-    item.innerText = ex.name;
-    item.addEventListener('click', () => {
-        AppState.expression = ex.expr;
-        updateDisplay(); updateGraphics(); setMode(ex.mode);
-        els.examplesDropdown.classList.remove('show');
-    });
-    els.examplesDropdown.appendChild(item);
-});
-
-els.examplesBtn.addEventListener('click', (e) => { e.stopPropagation(); els.examplesDropdown.classList.toggle('show'); });
-window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-container')) els.examplesDropdown.classList.remove('show'); });
+// Variables globales de Three.js (se declaran aquí, se inicializan en initCalculator)
+let scene, camera, renderer, controls, raycaster;
+let group3D, geometry3D, material3D, mesh3D, gridHelper3D, axesHelper3D;
+let group2D, paperPlane, grid2DMat, axisMat, curve2DGeo, curve2DMat, curve2D;
+let ambientLight, dirLight;
+let mouse, pointerMesh;
 
 // =========================================
-// SELECTOR DE COLOR
+// INICIALIZADOR PRINCIPAL
 // =========================================
-els.colorBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        els.colorBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        AppState.graphColor = parseInt(btn.dataset.color);
-        updateGraphics();
+function initCalculator() {
+    // Poblar ejemplos
+    examples.forEach(ex => {
+        const item = document.createElement('div');
+        item.className = 'examples-item';
+        item.innerText = ex.name;
+        item.addEventListener('click', () => {
+            AppState.expression = ex.expr;
+            updateDisplay(); updateGraphics(); setMode(ex.mode);
+            els.examplesDropdown.classList.remove('show');
+        });
+        els.examplesDropdown.appendChild(item);
     });
-});
+
+    els.examplesBtn.addEventListener('click', (e) => { e.stopPropagation(); els.examplesDropdown.classList.toggle('show'); });
+    window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-container')) els.examplesDropdown.classList.remove('show'); });
+
+    // Selector de Color
+    els.colorBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            els.colorBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            AppState.graphColor = parseInt(btn.dataset.color);
+            updateGraphics();
+        });
+    });
+
+    setupThreeJS();
+    setupScenes();
+    setupEvents();
+
+    if (AppState.isMobile) { setMode('2D'); expandMobile(); } else { setMode('2D'); }
+
+    updateDisplay();
+    updateGraphics();
+    animate();
+}
 
 // =========================================
 // SETUP THREE.JS
 // =========================================
-const container = document.getElementById('viewport');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(themes.light.bg);
+function setupThreeJS() {
+    const container = document.getElementById('viewport');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(themes.light.bg);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 0, 10); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 10); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-container.appendChild(renderer.domElement);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
 
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.dampingFactor = 0.05;
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.05;
 
-const raycaster = new THREE.Raycaster();
-raycaster.params.Line.threshold = 0.2;
+    raycaster = new THREE.Raycaster();
+    raycaster.params.Line.threshold = 0.2;
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(5, 10, 5); dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
-scene.add(dirLight);
-
-// =========================================
-// ESCENA 3D
-// =========================================
-const group3D = new THREE.Group(); scene.add(group3D);
-const geometry3D = new THREE.PlaneGeometry(14, 14, 100, 100); geometry3D.rotateX(-Math.PI / 2);
-const count = geometry3D.attributes.position.count;
-geometry3D.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
-
-const material3D = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.3, metalness: 0.1, flatShading: false });
-const mesh3D = new THREE.Mesh(geometry3D, material3D);
-mesh3D.castShadow = true; mesh3D.receiveShadow = true; mesh3D.visible = false;
-group3D.add(mesh3D);
-
-let gridHelper3D = new THREE.GridHelper(20,20, themes.light.grid3D_center, themes.light.grid3D_base);
-group3D.add(gridHelper3D);
-const axesHelper3D = new THREE.AxesHelper(2); group3D.add(axesHelper3D);
-
-// =========================================
-// ESCENA 2D
-// =========================================
-const group2D = new THREE.Group(); scene.add(group2D);
-const planeMat = new THREE.MeshBasicMaterial({ color: themes.light.paper, side: THREE.DoubleSide });
-const paperPlane = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), planeMat);
-paperPlane.position.z = -0.1; group2D.add(paperPlane);
-
-const grid2DMat = new THREE.LineBasicMaterial({ color: themes.light.grid });
-const grid2DGroup = new THREE.Group();
-for (let i = -6; i <= 6; i++) grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -4, 0), new THREE.Vector3(i, 4, 0)]), grid2DMat));
-for (let i = -4; i <= 4; i++) grid2DGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, i, 0), new THREE.Vector3(6, i, 0)]), grid2DMat));
-group2D.add(grid2DGroup);
-
-const axisMat = new THREE.LineBasicMaterial({ color: themes.light.axes });
-group2D.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0)]), axisMat));
-group2D.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -4, 0), new THREE.Vector3(0, 4, 0)]), axisMat));
-
-const curveRes = 400;
-const curve2DGeo = new THREE.BufferGeometry();
-curve2DGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(curveRes * 3), 3));
-const curve2DMat = new THREE.LineBasicMaterial({ color: AppState.graphColor });
-const curve2D = new THREE.Line(curve2DGeo, curve2DMat);
-group2D.add(curve2D);
-
-// =========================================
-// MOTOR MATEMÁTICO
-// =========================================
-function prepareExpression(rawExpr) {
-    let expr = rawExpr.toLowerCase();
-    expr = expr.replace(/\^/g, '**');
-    expr = expr.replace(/(\d)([a-zA-Z\(])/g, '$1*$2'); 
-    expr = expr.replace(/\)([a-zA-Z0-9\(])/g, ')*$1');  
-    expr = expr.replace(/([xyz])([xyz\(])/g, '$1*$2');  
-    expr = expr.replace(/\bln\(/g, 'Math.log(');
-    expr = expr.replace(/\blog\(/g, 'Math.log10(');
-    const funcs = ['sin','cos','tan','asin','acos','atan','sqrt','abs','exp','pow','floor','ceil','round'];
-    funcs.forEach(f => { expr = expr.replace(new RegExp(`\\b${f}\\(`, 'g'), `Math.${f}(`); });
-    expr = expr.replace(/\bpi\b/g, 'Math.PI');
-    expr = expr.replace(/\be\b/g, 'Math.E'); 
-    return expr;
-}
-
-function evaluate(x, y = 0) {
-    if (!AppState.expression) return 0;
-    try {
-        const expr = prepareExpression(AppState.expression);
-        const f = new Function('x', 'y', 'z', 'a', 'b', `return ${expr};`);
-        const r = f(x, y, 0, AppState.a, AppState.b);
-        return (isNaN(r) || !isFinite(r)) ? null : r;
-    } catch (e) { return null; }
-}
-
-function updateGraphics() {
-    curve2DMat.color.setHex(AppState.graphColor);
-    const pos3D = geometry3D.attributes.position;
-    const col3D = geometry3D.attributes.color;
-    const cLow = new THREE.Color(AppState.graphColor);
-    const cHigh = new THREE.Color(0xffffff);
-    const tempC = new THREE.Color();
-
-    for (let i = 0; i < pos3D.count; i++) {
-        const x = pos3D.getX(i), y = pos3D.getZ(i);
-        const z = evaluate(x, y);
-        if (z !== null) {
-            pos3D.setY(i, z);
-            const t = THREE.MathUtils.clamp((z + 5) / 10, 0, 1);
-            tempC.lerpColors(cLow, cHigh, t);
-            col3D.setXYZ(i, tempC.r, tempC.g, tempC.b);
-        } else { pos3D.setY(i, 0); }
-    }
-    pos3D.needsUpdate = true; col3D.needsUpdate = true;
-    geometry3D.computeVertexNormals();
-
-    const pos2D = curve2DGeo.attributes.position;
-    for (let i = 0; i < curveRes; i++) {
-        const x = (i / (curveRes - 1)) * 12 - 6;
-        const y = evaluate(x, 0);
-        if (y !== null) { pos2D.setXYZ(i, x, y, 0); } else { pos2D.setXYZ(i, x, 0, 0); }
-    }
-    pos2D.needsUpdate = true;
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
+    dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 10, 5); dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
+    scene.add(dirLight);
 }
 
 // =========================================
-// LÓGICA DE UI Y EVENTOS
+// ESCENAS 3D Y 2D
 // =========================================
-els.keypad.addEventListener('click', (e) => {
-    const btn = e.target.closest('button.key');
-    if (!btn) return;
-    if (btn.dataset.insert) insertText(btn.dataset.insert);
-    else if (btn.dataset.action === 'clear') clearDisplay();
-    else if (btn.dataset.action === 'backspace') backspace();
-    else if (btn.dataset.action === 'calculate') calculate();
-});
+function setupScenes() {
+    // 3D
+    group3D = new THREE.Group(); scene.add(group3D);
+    geometry3D = new THREE.PlaneGeometry(14, 14, 100, 100); geometry3D.rotateX(-Math.PI / 2);
+    const count = geometry3D.attributes.position.count;
+    geometry3D.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
 
-function insertText(char) { AppState.expression += char; updateDisplay(); updateGraphics(); }
-function clearDisplay() { AppState.expression = ""; updateDisplay(); updateGraphics(); }
-function backspace() { AppState.expression = AppState.expression.slice(0, -1); updateDisplay(); updateGraphics(); }
-function calculate() {
-    els.calc.classList.remove('pulse');
-    void els.calc.offsetWidth; 
-    els.calc.classList.add('pulse');
-    updateGraphics();
-}
+    material3D = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.3, metalness: 0.1, flatShading: false });
+    mesh3D = new THREE.Mesh(geometry3D, material3D);
+    mesh3D.castShadow = true; mesh3D.receiveShadow = true; mesh3D.visible = false;
+    group3D.add(mesh3D);
 
-function updateDisplay() {
-    const text = AppState.expression || "0";
-    let isSyntaxError = false;
-    if (text !== "0") {
-        try {
-            const expr = prepareExpression(text);
-            new Function('x', 'y', 'z', 'a', 'b', `return ${expr};`);
-        } catch (e) { isSyntaxError = true; }
-    }
-    if (isSyntaxError) {
-        els.display.classList.add('error');
-        els.display.innerHTML = `Error: ${text}<span class="cursor"></span>`;
-    } else {
-        els.display.classList.remove('error');
-        els.display.innerHTML = text + '<span class="cursor"></span>';
-    }
-}
-
-els.sliderA.addEventListener('input', (e) => { AppState.a = parseFloat(e.target.value); els.valA.innerText = AppState.a.toFixed(1); updateGraphics(); });
-els.sliderB.addEventListener('input', (e) => { AppState.b = parseFloat(e.target.value); els.valB.innerText = AppState.b.toFixed(1); updateGraphics(); });
-
-// =========================================
-// LÓGICA DE MODO (2D <-> 3D)
-// =========================================
-function setMode(mode) {
-    if (AppState.isAnimating && AppState.mode === mode) return;
-    AppState.mode = mode; AppState.isAnimating = true;
-    
-    els.btn2D.classList.toggle('active', mode === '2D');
-    els.btn3D.classList.toggle('active', mode === '3D');
-    els.statusText.innerText = mode === '2D' ? "MODO 2D" : "MODO 3D";
-    els.statusDot.style.background = mode === '2D' ? "#22c55e" : "#3b82f6";
-
-    let targetPos, targetLookAt, targetUp;
-    if (mode === '2D') {
-        group3D.visible = false; group2D.visible = true; mesh3D.visible = false;
-        targetPos = new THREE.Vector3(0, 0, 10); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
-    } else {
-        group3D.visible = true; group2D.visible = false; mesh3D.visible = true;
-        targetPos = new THREE.Vector3(8, 6, 8); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
-    }
-
-    const startPos = camera.position.clone(), startUp = camera.up.clone(), startTarget = controls.target.clone();
-    let progress = 0;
-    function animateCamera() {
-        progress += 0.025; if (progress > 1) progress = 1;
-        const ease = 1 - Math.pow(1 - progress, 3); 
-        camera.position.lerpVectors(startPos, targetPos, ease);
-        camera.up.lerpVectors(startUp, targetUp, ease);
+    gridHelper
