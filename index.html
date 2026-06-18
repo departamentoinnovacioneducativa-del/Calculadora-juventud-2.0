@@ -25,9 +25,10 @@
             <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
             <div class="login-box">
                 <h2>Acceso Institucional</h2>
-                <p class="login-subtitle">Verificación de dominio</p>
+                <p class="login-subtitle">Verificación de dominio (ej. tu.correo@juventud.edu.mx)</p>
                 <input type="email" id="email-input" placeholder="tu.correo@juventud.edu.mx" autocomplete="off">
-                <button id="start-btn" class="start-btn">Ingresar</button>
+                <!-- Se añadió type="button" para evitar recargas de página -->
+                <button type="button" id="start-btn" class="start-btn">Ingresar</button>
                 <p id="error-msg" class="error-msg">Solo se permiten correos @juventud.edu.mx</p>
             </div>
         </div>
@@ -41,11 +42,12 @@
         </div>
     </div>
 
-    <!-- Botones Superiores Derechos -->
-    <button id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
-    <button id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
-    <button id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
-    <button id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
+    <!-- Botones Superiores Derechos (Ordenados) -->
+    <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
+    <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
+    <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
+    <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
+    <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
 
     <div id="tooltip" class="tooltip"></div>
     <div id="viewport"></div>
@@ -57,32 +59,32 @@
                 <span class="header-title">GRAPH ENGINE PRO</span>
             </div>
             <div class="header-controls">
-                <button class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
+                <button type="button" class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
             </div>
         </div>
 
         <div class="screen-container">
-            <div class="screen-label">f(x, y) =</div>
+            <div class="screen-label">f(x, y, t) =</div>
             <div class="screen-output" id="display"><span class="cursor"></span></div>
         </div>
 
         <div class="controls-area">
             <div class="dropdown-container">
-                <button id="examples-btn" class="examples-btn">Ejemplos Rápidos ⌄</button>
+                <button type="button" id="examples-btn" class="examples-btn">Ejemplos Rápidos ⌄</button>
                 <div id="examples-dropdown" class="examples-dropdown"></div>
             </div>
 
             <div class="view-toggle">
-                <button class="toggle-btn active" id="btn-2d">2D GRÁFICO</button>
-                <button class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
+                <button type="button" class="toggle-btn active" id="btn-2d">2D GRÁFICO</button>
+                <button type="button" class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
             </div>
 
             <div class="color-selector">
                 <span class="color-label">Color Gráfica:</span>
                 <div class="color-options">
-                    <button class="color-btn green active" data-color="0x006847" title="Verde Bandera"></button>
-                    <button class="color-btn yellow" data-color="0xFFD700" title="Amarillo"></button>
-                    <button class="color-btn blue" data-color="0x0033A0" title="Azul"></button>
+                    <button type="button" class="color-btn green active" data-color="0x006847" title="Verde Bandera"></button>
+                    <button type="button" class="color-btn yellow" data-color="0xFFD700" title="Amarillo"></button>
+                    <button type="button" class="color-btn blue" data-color="0x0033A0" title="Azul"></button>
                 </div>
             </div>
 
@@ -104,43 +106,44 @@
         </div>
 
         <div class="keypad" id="keypad">
-            <button class="key func" data-insert="sin(">sin</button>
-            <button class="key func" data-insert="cos(">cos</button>
-            <button class="key func" data-insert="tan(">tan</button>
-            <button class="key func" data-insert="log(">log</button>
-            <button class="key func" data-insert="ln(">ln</button>
+            <button type="button" class="key func" data-insert="sin(">sin</button>
+            <button type="button" class="key func" data-insert="cos(">cos</button>
+            <button type="button" class="key func" data-insert="tan(">tan</button>
+            <button type="button" class="key func" data-insert="log(">log</button>
+            <button type="button" class="key func" data-insert="ln(">ln</button>
 
-            <button class="key func" data-insert="x">x</button>
-            <button class="key func" data-insert="y">y</button>
-            <button class="key func" data-insert="z">z</button>
-            <button class="key func" data-insert="(">(</button>
-            <button class="key func" data-insert=")">)</button>
+            <button type="button" class="key func" data-insert="x">x</button>
+            <button type="button" class="key func" data-insert="y">y</button>
+            <button type="button" class="key func" data-insert="z">z</button>
+            <button type="button" class="key func" data-insert="t">t</button>
+            <button type="button" class="key func" data-insert="(">(</button>
 
-            <button class="key" data-insert="7">7</button>
-            <button class="key" data-insert="8">8</button>
-            <button class="key" data-insert="9">9</button>
-            <button class="key op" data-insert="/">÷</button>
-            <button class="key op" data-insert="^">xʸ</button>
+            <button type="button" class="key func" data-insert=")">)</button>
+            <button type="button" class="key" data-insert="7">7</button>
+            <button type="button" class="key" data-insert="8">8</button>
+            <button type="button" class="key" data-insert="9">9</button>
+            <button type="button" class="key op" data-insert="/">÷</button>
 
-            <button class="key" data-insert="4">4</button>
-            <button class="key" data-insert="5">5</button>
-            <button class="key" data-insert="6">6</button>
-            <button class="key op" data-insert="*">×</button>
-            <button class="key op" data-insert="sqrt(">√</button>
+            <button type="button" class="key op" data-insert="^">xʸ</button>
+            <button type="button" class="key" data-insert="4">4</button>
+            <button type="button" class="key" data-insert="5">5</button>
+            <button type="button" class="key" data-insert="6">6</button>
+            <button type="button" class="key op" data-insert="*">×</button>
 
-            <button class="key" data-insert="1">1</button>
-            <button class="key" data-insert="2">2</button>
-            <button class="key" data-insert="3">3</button>
-            <button class="key op" data-insert="+">+</button>
-            <button class="key op" data-insert="-">-</button>
+            <button type="button" class="key op" data-insert="sqrt(">√</button>
+            <button type="button" class="key" data-insert="1">1</button>
+            <button type="button" class="key" data-insert="2">2</button>
+            <button type="button" class="key" data-insert="3">3</button>
+            <button type="button" class="key op" data-insert="+">+</button>
 
-            <button class="key" data-insert="0">0</button>
-            <button class="key" data-insert=".">.</button>
-            <button class="key op" data-insert="pi">π</button>
-            <button class="key op" data-action="backspace">DEL</button>
-            <button class="key clear" data-action="clear">AC</button>
+            <button type="button" class="key op" data-insert="-">-</button>
+            <button type="button" class="key" data-insert="0">0</button>
+            <button type="button" class="key" data-insert=".">.</button>
+            <button type="button" class="key op" data-insert="pi">π</button>
+            <button type="button" class="key op" data-action="backspace">DEL</button>
 
-            <button class="key enter" data-action="calculate" style="grid-column: span 5;">=</button>
+            <button type="button" class="key clear" data-action="clear">AC</button>
+            <button type="button" class="key enter" data-action="calculate" style="grid-column: span 4;">=</button>
         </div>
         
         <div class="resize-handle" id="resize-handle"></div>
