@@ -33,36 +33,30 @@
         </div>
     </div>
 
-    <!-- HUD -->
-    <div class="hud-overlay">
-        <div class="mode-badge">
-            <div class="mode-dot" id="status-dot"></div>
-            <span id="status-text">MODO 2D</span>
+    <!-- Lienzo Gráfico -->
+    <div id="viewport">
+        <div class="hud-overlay">
+            <div class="mode-badge">
+                <div class="mode-dot" id="status-dot"></div>
+                <span id="status-text">MODO 2D</span>
+            </div>
         </div>
+
+        <!-- Botones Superiores -->
+        <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
+        <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
+        <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
+        <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
+        <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
+
+        <div id="tooltip" class="tooltip"></div>
+        <div id="version-tag">versión 2.033</div>
     </div>
 
-    <!-- Botones Superiores Derechos -->
-    <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
-    <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
-    <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
-    <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar/Ocultar Calculadora">🧮</button>
-    <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema">🌙</button>
-
-    <div id="tooltip" class="tooltip"></div>
-    <div id="viewport"></div>
-
-    <!-- Leyenda de Versión -->
-    <div id="version-tag">versión 2.033</div>
-
+    <!-- Calculadora Estática -->
     <div class="calculator-container" id="calculator">
-        <div class="calc-header" id="calc-header">
-            <div class="header-inner">
-                <div class="mobile-drag-handle" id="mobile-handle"></div>
-                <span class="header-title">GRAPH ENGINE PRO</span>
-            </div>
-            <div class="header-controls">
-                <button type="button" class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
-            </div>
+        <div class="calc-header">
+            <span class="header-title">GRAPH ENGINE PRO</span>
         </div>
 
         <div class="screen-container">
@@ -77,8 +71,9 @@
             </div>
 
             <div class="view-toggle">
-                <button type="button" class="toggle-btn active" id="btn-2d">2D GRÁFICO</button>
-                <button type="button" class="toggle-btn" id="btn-3d">3D SUPERFICIE</button>
+                <button type="button" class="toggle-btn active" id="btn-2d">2D</button>
+                <button type="button" class="toggle-btn" id="btn-3d">3D</button>
+                <button type="button" class="toggle-btn" id="btn-1d">1D</button>
             </div>
 
             <div class="color-selector">
@@ -147,8 +142,6 @@
             <button type="button" class="key clear" data-action="clear">AC</button>
             <button type="button" class="key enter" data-action="calculate" style="grid-column: span 4;">=</button>
         </div>
-        
-        <div class="resize-handle" id="resize-handle"></div>
     </div>
 
     <script src="script.js"></script>
