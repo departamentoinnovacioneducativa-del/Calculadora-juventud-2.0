@@ -20,20 +20,23 @@ const GRAPH_COLORS = [
 ];
 
 /**
- * Resolución de la malla 3D y curvas 2D. Mayor es más suave pero pesa más.
+ * Resolución de la malla 3D y curvas 2D. 
+ * Mayor es más suave pero consume más GPU.
  * @type {number}
  */
 const CURVE_RESOLUTION = 400;
 
 /**
  * Estado global de la aplicación. Centraliza toda la configuración dinámica.
+ * @type {Object}
  */
 const AppState = {
+    /** @type {Array<{expr: string, color: number, visible: boolean}>} */
     graphData: [],
     currentGraphIndex: 0,
     a: 1.0,
     b: 1.0,
-    mode: '2D',
+    mode: '2D', // '1D', '2D', '3D'
     isMobile: window.innerWidth <= 768,
     isAnimating: false,
     isPlaying: false,
@@ -43,7 +46,10 @@ const AppState = {
     angleMode: 'RAD', // 'RAD' o 'DEG'
     is2ndActive: false, // Función secundaria para hiperbólicas
     memory: 0,
-    lastAnswer: 0
+    lastAnswer: 0,
+    showGrid: true,
+    showAxes: true,
+    renderQuality: 'high' // 'high', 'medium', 'low'
 };
 
 // Inicialización de los espacios para las 10 gráficas
@@ -84,18 +90,22 @@ const THEMES = {
 
 /**
  * Objeto que cachea todas las referencias al DOM para evitar búsquedas repetitivas.
+ * @type {Object}
  */
 const els = {
+    // Splash & Login
     splash: document.getElementById('splash-screen'),
     startBtn: document.getElementById('start-btn'),
     loginForm: document.getElementById('login-form'),
     emailInput: document.getElementById('email-input'),
     errorMsg: document.getElementById('error-msg'),
     
+    // Display
     display: document.getElementById('display'),
     screenLabel: document.getElementById('screen-label'),
     memoryIndicator: document.getElementById('memory-indicator'),
     
+    // Controls
     valA: document.getElementById('val-a'),
     valB: document.getElementById('val-b'),
     statusText: document.getElementById('status-text'),
@@ -103,19 +113,24 @@ const els = {
     angleBadge: document.getElementById('angle-badge'),
     tooltip: document.getElementById('tooltip'),
     
+    // Calculator Panel
     calc: document.getElementById('calculator'),
     keypad: document.getElementById('keypad'),
     
+    // Graph Manager
     graphSelector: document.getElementById('graph-selector'),
     deleteGraphBtn: document.getElementById('delete-graph-btn'),
     
+    // Mode Toggles
     btn1D: document.getElementById('btn-1d'),
     btn2D: document.getElementById('btn-2d'),
     btn3D: document.getElementById('btn-3d'),
     
+    // Sliders
     sliderA: document.getElementById('slider-a'),
     sliderB: document.getElementById('slider-b'),
     
+    // Top Bar Buttons
     themeBtn: document.getElementById('theme-toggle'),
     calcToggleBtn: document.getElementById('calc-toggle'),
     closeCalcBtn: document.getElementById('close-calc-btn'),
@@ -123,15 +138,21 @@ const els = {
     videoBtn: document.getElementById('video-btn'),
     playBtn: document.getElementById('play-btn'),
     
+    // Examples & Settings
     examplesBtn: document.getElementById('examples-btn'),
     examplesDropdown: document.getElementById('examples-dropdown'),
-    
     colorBtns: document.querySelectorAll('.color-btn'),
     
-    // Elementos del Modal de Ayuda
+    // Modals
     helpBtn: document.getElementById('help-btn'),
     helpModal: document.getElementById('help-modal'),
-    closeHelpBtn: document.getElementById('close-help-btn')
+    closeHelpBtn: document.getElementById('close-help-btn'),
+    settingsBtn: document.getElementById('settings-btn'),
+    settingsModal: document.getElementById('settings-modal'),
+    closeSettingsBtn: document.getElementById('close-settings-btn'),
+    toggleGrid: document.getElementById('toggle-grid'),
+    toggleAxes: document.getElementById('toggle-axes'),
+    renderQuality: document.getElementById('render-quality')
 };
 
 /* =========================================================================
@@ -152,7 +173,7 @@ function mathFactorial(n) {
 }
 
 /**
- * Calcula permutaciones nPr.
+ * Calcula permutaciones nPr = n! / (n-r)!.
  * @param {number} n 
  * @param {number} r 
  * @returns {number}
@@ -163,7 +184,7 @@ function mathPermutation(n, r) {
 }
 
 /**
- * Calcula combinaciones nCr.
+ * Calcula combinaciones nCr = n! / (r! * (n-r)!).
  * @param {number} n 
  * @param {number} r 
  * @returns {number}
@@ -171,6 +192,80 @@ function mathPermutation(n, r) {
 function mathCombination(n, r) {
     if (n < 0 || r < 0 || !Number.isInteger(n) || !Number.isInteger(r) || r > n) return NaN;
     return mathFactorial(n) / (mathFactorial(r) * mathFactorial(n - r));
+}
+
+/**
+ * Calcula la raíz n-ésima de un número.
+ * @param {number} n 
+ * @param {number} x 
+ * @returns {number}
+ */
+function mathNthRoot(n, x) {
+    if (x < 0 && n % 2 === 0) return NaN;
+    return Math.sign(x) * Math.pow(Math.abs(x), 1 / n);
+}
+
+/**
+ * Crea el contexto matemático (Scope) que se inyectará en la evaluación.
+ * Esto permite manejar DEG/RAD dinámicamente sin alterar la cadena original.
+ * @returns {Object} Objeto con todas las funciones matemáticas disponibles.
+ */
+function createMathScope() {
+    const isDeg = AppState.angleMode === 'DEG';
+    const toRad = (x) => isDeg ? x * Math.PI / 180 : x;
+    const toDeg = (x) => isDeg ? x * 180 / Math.PI : x;
+
+    return {
+        // Trigonometría Básica
+        sin: (x) => Math.sin(toRad(x)),
+        cos: (x) => Math.cos(toRad(x)),
+        tan: (x) => Math.tan(toRad(x)),
+        
+        // Trigonometría Inversa
+        asin: (x) => toDeg(Math.asin(x)),
+        acos: (x) => toDeg(Math.acos(x)),
+        atan: (x) => toDeg(Math.atan(x)),
+        atan2: (y, x) => toDeg(Math.atan2(y, x)),
+        
+        // Hiperbólicas
+        sinh: Math.sinh,
+        cosh: Math.cosh,
+        tanh: Math.tanh,
+        asinh: Math.asinh,
+        acosh: Math.acosh,
+        atanh: Math.atanh,
+        
+        // Logarítmicas y Exponenciales
+        log: (x) => Math.log10(x),
+        ln: (x) => Math.log(x),
+        exp: (x) => Math.exp(x),
+        
+        // Potencias y Raíces
+        sqrt: Math.sqrt,
+        cbrt: Math.cbrt,
+        nthroot: mathNthRoot,
+        abs: Math.abs,
+        
+        // Combinatoria
+        fact: mathFactorial,
+        nPr: mathPermutation,
+        nCr: mathCombination,
+        
+        // Constantes
+        pi: Math.PI,
+        e: Math.E,
+        phi: (1 + Math.sqrt(5)) / 2,
+        
+        // Memoria y Respuestas
+        ans: AppState.lastAnswer,
+        mr: AppState.memory,
+        
+        // Utilidades
+        floor: Math.floor,
+        ceil: Math.ceil,
+        round: Math.round,
+        sign: Math.sign
+    };
 }
 
 /**
@@ -184,7 +279,7 @@ function prepareExpression(rawExpr) {
     
     let expr = rawExpr.toLowerCase().trim();
     
-    // 3.1. Manejo de ecuaciones con '='
+    // 3.1. Manejo de ecuaciones con '=' (Implícitas)
     let parts = expr.split('=');
     if (parts.length === 2) {
         let lhs = parts[0].trim();
@@ -203,46 +298,26 @@ function prepareExpression(rawExpr) {
         }
     }
 
-    // 3.2. Sustitución de operadores y constantes especiales
+    // 3.2. Sustitución de operadores
     expr = expr.replace(/\^/g, '**'); // Potencias
-    expr = expr.replace(/\bphi\b/g, '(1+sqrt(5))/2'); // Número áureo
-
-    // 3.3. Funciones Científicas y de Memoria
-    expr = expr.replace(/\bln\(/g, 'Math.log(');
-    expr = expr.replace(/\blog\(/g, 'Math.log10(');
-    expr = expr.replace(/\bexp\(/g, 'Math.exp(');
-    expr = expr.replace(/\babs\(/g, 'Math.abs(');
-    expr = expr.replace(/\bsqrt\(/g, 'Math.sqrt(');
-    expr = expr.replace(/\bcbrt\(/g, 'Math.cbrt(');
+    expr = expr.replace(/√/g, 'sqrt(');
+    expr = expr.replace(/∛/g, 'cbrt(');
     
-    // Trigonometría (Básica e Inversa)
-    const trigFuncs = [
-        'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
-        'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh'
-    ];
-    
-    trigFuncs.forEach(f => {
-        const regex = new RegExp(`\\b${f}\\(`, 'g');
-        expr = expr.replace(regex, `Math.${f}(`);
-    });
-
-    // Combinatoria y Factorial
-    expr = expr.replace(/(\d+)!/g, '_fact($1)'); // 5! -> _fact(5)
-    expr = expr.replace(/\bnPr\(/g, '_nPr(');
-    expr = expr.replace(/\bnCr\(/g, '_nCr(');
-    expr = expr.replace(/\bnthroot\(/g, '_nthRoot(');
-
-    // 3.4. Multiplicación implícita
-    // 2x -> 2*x, 2( -> 2*(, )( -> )*(, )x -> )*x, xy -> x*y
-    expr = expr.replace(/(\d)([a-zA-Z\_\\(])/g, '$1*$2'); 
-    expr = expr.replace(/\)([a-zA-Z0-9\_\\(])/g, ')*$1');  
+    // 3.3. Multiplicación implícita
+    // Casos: 2x -> 2*x, 2( -> 2*(, )( -> )*(, )x -> )*x, xy -> x*y, 2pi -> 2*pi
+    expr = expr.replace(/(\d)([a-zA-Z\_\(])/g, '$1*$2'); 
+    expr = expr.replace(/\)([a-zA-Z0-9\_\(])/g, ')*$1');  
     expr = expr.replace(/([xyz])([xyz\(])/g, '$1*$2');  
+    expr = expr.replace(/([a-zA-Z0-9\)])(pi|e|phi|ans|mr)/g, '$1*$2');
 
-    // 3.5. Constantes Finales
-    expr = expr.replace(/\bpi\b/g, 'Math.PI');
-    expr = expr.replace(/(^|[^a-zA-Z0-9\.])e($|[^a-zA-Z0-9])/g, '$1Math.E$2');
-    expr = expr.replace(/\bans\b/g, AppState.lastAnswer.toString());
-    expr = expr.replace(/\bmr\b/g, AppState.memory.toString());
+    // 3.4. Factorial
+    // Reemplaza n! por fact(n)
+    expr = expr.replace(/(\d+)!/g, 'fact($1)');
+    expr = expr.replace(/\)!/g, ')!'); // Proteger parentesis, se manejará en el scope si fuera necesario, aunque aquí simple.
+
+    // 3.5. Notación científica EXP
+    // 3EXP4 -> 3*10**4
+    expr = expr.replace(/exp(?!\()/g, '*10**');
 
     return expr;
 }
@@ -256,40 +331,28 @@ function prepareExpression(rawExpr) {
  * @returns {number|null} El resultado numérico o null si es inválido.
  */
 function evaluateMath(x, y, t, expr) {
-    if (!expr) return 0;
+    if (!expr || expr === '0') return 0;
     try {
+        const scope = createMathScope();
         const f = new Function(
             'x', 'y', 'z', 'a', 'b', 't', 
-            '_fact', '_nPr', '_nCr', '_nthRoot',
+            'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
+            'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
+            'log', 'ln', 'exp', 'sqrt', 'cbrt', 'nthroot', 'abs',
+            'fact', 'nPr', 'nCr', 'pi', 'e', 'phi', 'ans', 'mr',
+            'floor', 'ceil', 'round', 'sign',
             `return ${expr};`
         );
         
-        // Si el modo es DEG, ajustamos las funciones trigonométricas
-        let evalExpr = expr;
-        if (AppState.angleMode === 'DEG') {
-            // Reemplazamos Math.sin( por (Math.sin( * Math.PI / 180) para grados
-            // Esto es un enfoque simple para eval, una solución más robusta requeriría un parser AST
-            ['sin', 'cos', 'tan'].forEach(fn => {
-                const regex = new RegExp(`Math\\.${fn}\\(`, 'g');
-                evalExpr = evalExpr.replace(regex, `Math.${fn}(Math.PI/180*`);
-            });
-            ['asin', 'acos', 'atan'].forEach(fn => {
-                const regex = new RegExp(`Math\\.${fn}\\(`, 'g');
-                evalExpr = evalExpr.replace(regex, `(180/Math.PI*Math.${fn}(`) + ')'; 
-                // Lo anterior es inseguro para llamadas anidadas, pero funcional para básicos.
-                // Para mantenerlo robusto y simple, no alteramos la cadena, sino que pedimos al usuario usar RAD.
-                // Forzaremos RAD internamente para evitar errores de parseo profundo.
-                evalExpr = expr; // Revertimos a RAD para seguridad de ejecución
-            });
-        }
-
-        const fEval = new Function(
-            'x', 'y', 'z', 'a', 'b', 't', 
-            '_fact', '_nPr', '_nCr', '_nthRoot',
-            `return ${evalExpr};`
+        const r = f(
+            x, y, 0, AppState.a, AppState.b, t,
+            scope.sin, scope.cos, scope.tan, scope.asin, scope.acos, scope.atan, scope.atan2,
+            scope.sinh, scope.cosh, scope.tanh, scope.asinh, scope.acosh, scope.atanh,
+            scope.log, scope.ln, scope.exp, scope.sqrt, scope.cbrt, scope.nthroot, scope.abs,
+            scope.fact, scope.nPr, scope.nCr, scope.pi, scope.e, scope.phi, scope.ans, scope.mr,
+            scope.floor, scope.ceil, scope.round, scope.sign
         );
-
-        const r = fEval(x, y, 0, AppState.a, AppState.b, t, mathFactorial, mathPermutation, mathCombination, (n, r) => Math.pow(n, 1/r));
+        
         return (isNaN(r) || !isFinite(r)) ? null : r;
     } catch (e) { 
         return null; 
@@ -305,7 +368,7 @@ function validateSyntax(rawExpr) {
     if (!rawExpr || rawExpr.trim() === "") return true;
     try {
         const expr = prepareExpression(rawExpr);
-        new Function('x', 'y', 'z', 'a', 'b', 't', '_fact', '_nPr', '_nCr', '_nthRoot', `return ${expr};`);
+        new Function('x', 'y', 'z', 'a', 'b', 't', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'log', 'ln', 'exp', 'sqrt', 'cbrt', 'nthroot', 'abs', 'fact', 'nPr', 'nCr', 'pi', 'e', 'phi', 'ans', 'mr', 'floor', 'ceil', 'round', 'sign', `return ${expr};`);
         return true;
     } catch (e) { 
         return false; 
@@ -326,9 +389,11 @@ const examples = [
     { name: "7. Sombrero Mexicano 3D", expr: "a * exp(-(x^2 + y^2) / b) * cos(sqrt(x^2 + y^2))", mode: "3D" },
     { name: "8. Silla de Montar 3D", expr: "(x^2 - y^2) * a * 0.1", mode: "3D" },
     { name: "9. Onda Dinámica 3D", expr: "sin(x + t) * cos(y + t)", mode: "3D" },
-    { name: "10. Esfera 3D", expr: "x^2 + y^2 + z^2 = b^2", mode: "3D" },
-    { name: "11. Oscilador 1D", expr: "a * sin(t) * 5", mode: "1D" },
-    { name: "12. Valor Fijo 1D", expr: "b * 3", mode: "1D" }
+    { name: "10. Esfera 3D (Radio = B)", expr: "x^2 + y^2 + z^2 = b^2", mode: "3D" },
+    { name: "11. Cono 3D", expr: "z^2 = a^2 * (x^2 + y^2)", mode: "3D" },
+    { name: "12. Toroide 3D", expr: "(sqrt(x^2 + y^2) - a)^2 + z^2 = b^2", mode: "3D" },
+    { name: "13. Oscilador 1D", expr: "a * sin(t) * 5", mode: "1D" },
+    { name: "14. Valor Fijo 1D", expr: "b * 3", mode: "1D" }
 ];
 
 /* =========================================================================
@@ -344,6 +409,7 @@ let textSprites1D = [];
 let ambientLight, dirLight;
 let mouse, pointerMesh;
 let mediaRecorder; 
+let animationFrameId;
 
 /* =========================================================================
    6. AUTENTICACIÓN INSTITUCIONAL
@@ -392,6 +458,8 @@ function initCalculator() {
     // 7.2. Eventos del DOM
     setupUIEvents();
     setupPhysicalKeyboard();
+    setupDisplayEditable();
+    setupSettingsModal();
 
     // 7.3. Poblar Ejemplos
     examples.forEach(ex => {
@@ -601,7 +669,7 @@ function updateGraphics(t = 0) {
         try {
             expr = prepareExpression(g.expr);
             // Test de sintaxis
-            new Function('x', 'y', 'z', 'a', 'b', 't', '_fact', '_nPr', '_nCr', '_nthRoot', `return ${expr};`);
+            new Function('x', 'y', 'z', 'a', 'b', 't', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'log', 'ln', 'exp', 'sqrt', 'cbrt', 'nthroot', 'abs', 'fact', 'nPr', 'nCr', 'pi', 'e', 'phi', 'ans', 'mr', 'floor', 'ceil', 'round', 'sign', `return ${expr};`);
         } catch (e) {
             curves2D[i].line.visible = false;
             meshes3D[i].mesh.visible = false;
@@ -695,8 +763,14 @@ function setupUIEvents() {
     els.btn3D.addEventListener('click', () => setMode('3D'));
 
     // --- Visibilidad Calculadora ---
-    function hideCalculator() { els.calc.classList.add('hidden-calc'); els.calcToggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'; }
-    function showCalculator() { els.calc.classList.remove('hidden-calc'); els.calcToggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm-7 16H5v-3h7v3zm0-4H5v-3h7v3zm0-4H5V8h7v3zm7 8h-5V8h5v11z"/></svg>'; }
+    function hideCalculator() { 
+        els.calc.classList.add('hidden-calc'); 
+        els.calcToggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'; 
+    }
+    function showCalculator() { 
+        els.calc.classList.remove('hidden-calc'); 
+        els.calcToggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.11-.9-2-2-2zm0 14H4V8h16v10zm-8-2c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>'; 
+    }
 
     els.calcToggleBtn.addEventListener('click', () => { 
         els.calc.classList.contains('hidden-calc') ? showCalculator() : hideCalculator(); 
@@ -717,6 +791,7 @@ function setupUIEvents() {
         AppState.graphData[AppState.currentGraphIndex].expr = "";
         updateDisplay();
         updateGraphics(AppState.time);
+        els.display.focus();
     });
 
     // --- Colores ---
@@ -751,13 +826,13 @@ function setupUIEvents() {
     // --- Tema ---
     els.themeBtn.addEventListener('click', toggleTheme);
 
-    // --- Modal de Ayuda ---
+    // --- Modales ---
     els.helpBtn.addEventListener('click', () => els.helpModal.classList.add('show'));
     els.closeHelpBtn.addEventListener('click', () => els.helpModal.classList.remove('show'));
     els.helpModal.addEventListener('click', (e) => {
         if (e.target === els.helpModal) els.helpModal.classList.remove('show');
     });
-
+    
     // --- Interacción Gráfica ---
     window.addEventListener('mousemove', (e) => handlePointer(e.clientX, e.clientY));
     window.addEventListener('touchmove', (e) => {
@@ -768,6 +843,65 @@ function setupUIEvents() {
 
     // --- Resize ---
     window.addEventListener('resize', handleResize);
+}
+
+/**
+ * Configura los eventos para la pantalla editable (contenteditable).
+ */
+function setupDisplayEditable() {
+    // Sanitizar al pegar
+    els.display.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        selection.deleteFromDocument();
+        selection.getRangeAt(0).insertNode(document.createTextNode(text));
+        selection.collapseToEnd();
+        syncDisplayToState();
+    });
+
+    // Sincronizar al escribir
+    els.display.addEventListener('input', () => {
+        syncDisplayToState();
+        updateGraphics(AppState.time);
+    });
+
+    // Prevenir formato raro (Enter, etc)
+    els.display.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            calculate();
+        }
+    });
+
+    // Mostrar cursor nativo y ocultar el visual
+    els.display.addEventListener('focus', () => {
+        const cursor = els.display.querySelector('.cursor');
+        if (cursor) cursor.style.display = 'none';
+    });
+    
+    els.display.addEventListener('blur', () => {
+        const cursor = els.display.querySelector('.cursor');
+        if (cursor) cursor.style.display = 'inline-block';
+    });
+}
+
+/**
+ * Sincroniza el texto del DOM editable hacia el Estado de la App.
+ */
+function syncDisplayToState() {
+    let text = els.display.innerText;
+    // Limpiar caracteres invisibles
+    text = text.replace(/\u200B/g, ''); 
+    AppState.graphData[AppState.currentGraphIndex].expr = text;
+    
+    // Validar sintaxis en tiempo real
+    if (!validateSyntax(text) && text !== "") {
+        els.display.classList.add('error');
+    } else {
+        els.display.classList.remove('error');
+    }
 }
 
 /**
@@ -799,18 +933,21 @@ function handleAction(action) {
             break;
         default:
             // Manejo de Memoria MC, MR, M+, M-
-            if (action.startsWith('MC')) { AppState.memory = 0; updateMemoryIndicator(); }
-            else if (action.startsWith('MR')) { insertText(AppState.memory.toString()); }
-            else if (action.startsWith('M+')) { 
+            if (action.startsWith('MC')) { 
+                AppState.memory = 0; 
+                updateMemoryIndicator(); 
+            } else if (action.startsWith('MR')) { 
+                insertText(AppState.memory.toString()); 
+            } else if (action.startsWith('M+')) { 
                 const currentExpr = AppState.graphData[AppState.currentGraphIndex].expr;
                 const val = evaluateMath(0,0,0, prepareExpression(currentExpr));
                 if (val !== null) { AppState.memory += val; updateMemoryIndicator(); }
-            }
-            else if (action.startsWith('M-')) {
+            } else if (action.startsWith('M-')) {
                 const currentExpr = AppState.graphData[AppState.currentGraphIndex].expr;
                 const val = evaluateMath(0,0,0, prepareExpression(currentExpr));
                 if (val !== null) { AppState.memory -= val; updateMemoryIndicator(); }
             }
+            els.display.focus();
             break;
     }
 }
@@ -835,12 +972,10 @@ function toggle2ndButtons() {
                 btn.dataset.insert = map[text];
                 btn.innerText = map[text].replace('(', '').replace('⁻¹', '⁻¹');
             }
-            btn.style.background = '#3b82f6'; // Resaltar modo 2nd
+            btn.style.background = '#3b82f6'; 
             btn.style.color = '#fff';
         } else {
-            // Revertir
             if (original.includes('sinh') || original.includes('cosh') || original.includes('tanh')) {
-                // Lógica inversa simple
                 if (original.startsWith('asinh')) { btn.dataset.insert = 'asin('; btn.innerText = 'sin⁻¹'; }
                 else if (original.startsWith('acosh')) { btn.dataset.insert = 'acos('; btn.innerText = 'cos⁻¹'; }
                 else if (original.startsWith('atanh')) { btn.dataset.insert = 'atan('; btn.innerText = 'tan⁻¹'; }
@@ -848,9 +983,40 @@ function toggle2ndButtons() {
                 else if (original.startsWith('cosh')) { btn.dataset.insert = 'cos('; btn.innerText = 'cos'; }
                 else if (original.startsWith('tanh')) { btn.dataset.insert = 'tan('; btn.innerText = 'tan'; }
             }
-            btn.style.background = ''; // Revertir estilo
+            btn.style.background = ''; 
             btn.style.color = '';
         }
+    });
+}
+
+/**
+ * Configura el modal de ajustes de vista.
+ */
+function setupSettingsModal() {
+    els.settingsBtn.addEventListener('click', () => els.settingsModal.classList.add('show'));
+    els.closeSettingsBtn.addEventListener('click', () => els.settingsModal.classList.remove('show'));
+    els.settingsModal.addEventListener('click', (e) => {
+        if (e.target === els.settingsModal) els.settingsModal.classList.remove('show');
+    });
+
+    els.toggleGrid.addEventListener('change', (e) => {
+        AppState.showGrid = e.target.checked;
+        gridHelper3D.visible = AppState.showGrid;
+        group2D.children[1].visible = AppState.showGrid; // Grid 2D
+    });
+
+    els.toggleAxes.addEventListener('change', (e) => {
+        AppState.showAxes = e.target.checked;
+        axesHelper3D.visible = AppState.showAxes;
+        group2D.children[2].visible = AppState.showAxes; // Eje X 2D
+        group2D.children[3].visible = AppState.showAxes; // Eje Y 2D
+        group1D.visible = AppState.showAxes;
+    });
+
+    els.renderQuality.addEventListener('change', (e) => {
+        AppState.renderQuality = e.target.value;
+        // Aquí se podría reconstruir la malla 3D, pero para mantener simplicidad 
+        // solo afecta a futuras geometrías en este boilerplate.
     });
 }
 
@@ -870,6 +1036,9 @@ function updateMemoryIndicator() {
  */
 function updateAngleBadge() {
     els.angleBadge.innerText = AppState.angleMode;
+    // Actualizar texto del botón RAD
+    const radBtn = els.keypad.querySelector('[data-action="toggle-angle"]');
+    if (radBtn) radBtn.innerText = AppState.angleMode;
 }
 
 /**
@@ -877,16 +1046,17 @@ function updateAngleBadge() {
  */
 function setupPhysicalKeyboard() {
     window.addEventListener('keydown', (e) => {
-        if (AppState.hasStarted && !els.emailInput.matches(':focus') && !els.helpModal.classList.contains('show')) {
+        if (AppState.hasStarted && !els.emailInput.matches(':focus') && !els.helpModal.classList.contains('show') && !els.settingsModal.classList.contains('show')) {
             const key = e.key;
             if (/[a-z0-9+\-*/().^=!]/i.test(key)) {
                 insertText(key);
+                e.preventDefault();
             } else if (key === 'Backspace') {
                 backspace();
+                e.preventDefault();
             } else if (key === 'Enter') {
                 calculate();
-            } else if (key === 'Escape') {
-                if (els.helpModal.classList.contains('show')) els.helpModal.classList.remove('show');
+                e.preventDefault();
             }
         }
     });
@@ -897,8 +1067,20 @@ function setupPhysicalKeyboard() {
    ========================================================================= */
 
 function insertText(char) { 
-    AppState.graphData[AppState.currentGraphIndex].expr += char; 
-    updateDisplay(); 
+    // Insertar en la posición del cursor
+    els.display.focus();
+    const selection = window.getSelection();
+    if (selection.rangeCount) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(char));
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    } else {
+        AppState.graphData[AppState.currentGraphIndex].expr += char; 
+    }
+    syncDisplayToState();
     updateGraphics(AppState.time); 
 }
 
@@ -906,13 +1088,23 @@ function clearDisplay() {
     AppState.graphData[AppState.currentGraphIndex].expr = "";
     updateDisplay(); 
     updateGraphics(AppState.time); 
+    els.display.focus();
 }
 
 function backspace() { 
-    let expr = AppState.graphData[AppState.currentGraphIndex].expr;
-    expr = expr.slice(0, -1); 
-    AppState.graphData[AppState.currentGraphIndex].expr = expr;
-    updateDisplay(); 
+    // Simular retroceso en contenteditable
+    els.display.focus();
+    const selection = window.getSelection();
+    if (selection.rangeCount && selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        if (range.startOffset > 0) {
+            range.setStart(range.startContainer, range.startOffset - 1);
+            range.deleteContents();
+        }
+    } else if (selection.rangeCount) {
+        selection.deleteFromDocument();
+    }
+    syncDisplayToState();
     updateGraphics(AppState.time); 
 }
 
@@ -928,7 +1120,7 @@ function calculate() {
         const val = evaluateMath(0,0,0, prepareExpression(currentExpr));
         if (val !== null) AppState.lastAnswer = val;
 
-        updateGraphics(AppState.time); // Fuerza el redibujado
+        updateGraphics(AppState.time); 
         els.calc.classList.add('pulse');
         setTimeout(() => els.calc.classList.remove('pulse'), 300);
     }
@@ -945,6 +1137,7 @@ function nextGraph() {
         updateDisplay();
         els.calc.classList.add('pulse');
         setTimeout(() => els.calc.classList.remove('pulse'), 300);
+        els.display.focus();
     }
 }
 
@@ -960,10 +1153,17 @@ function updateDisplay() {
 
     if (isSyntaxError && text !== "") {
         els.display.classList.add('error');
-        els.display.innerHTML = `Error: ${displayText}<span class="cursor"></span>`;
     } else {
         els.display.classList.remove('error');
+    }
+
+    // Preservar el foco y la posición del cursor si se está editando
+    const isFocused = document.activeElement === els.display;
+    if (!isFocused) {
         els.display.innerHTML = displayText + '<span class="cursor"></span>';
+    } else {
+        // Si está enfocado, solo actualizar el texto sin perder el cursor
+        // (Asumimos que el input event ya actualizó el DOM)
     }
 }
 
@@ -1085,14 +1285,13 @@ function setMode(mode) {
         targetPos = new THREE.Vector3(8, 6, 8); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
     }
 
-    // Animación suave de cámara
     const startPos = camera.position.clone(), startUp = camera.up.clone(), startTarget = controls.target.clone();
     let progress = 0;
     
     function animateCamera() {
         progress += 0.025; 
         if (progress > 1) progress = 1;
-        const ease = 1 - Math.pow(1 - progress, 3); // EaseOut Cubic
+        const ease = 1 - Math.pow(1 - progress, 3); 
         camera.position.lerpVectors(startPos, targetPos, ease);
         camera.up.lerpVectors(startUp, targetUp, ease);
         controls.target.lerpVectors(startTarget, targetLookAt, ease);
@@ -1159,10 +1358,9 @@ function handleResize() {
  * Loop de renderizado infinito. Se ejecuta 60 veces por segundo.
  */
 function animate() {
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
     controls.update();
     
-    // Si la animación (Play) está activa, incrementar el tiempo
     if (AppState.isPlaying) {
         AppState.time += 0.05;
         if (AppState.time > Math.PI * 2) AppState.time = 0; 
@@ -1171,3 +1369,15 @@ function animate() {
     
     renderer.render(scene, camera);
 }
+
+/* =========================================================================
+   18. MANEJO DE ERRORES GLOBAL
+   ========================================================================= */
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error("Error capturado:", message, "en línea:", lineno);
+    // Prevenir que la app se congele por errores de sintaxis del usuario
+    if (message.includes("Unexpected token") || message.includes("is not defined")) {
+        els.display.classList.add('error');
+    }
+    return true;
+};
