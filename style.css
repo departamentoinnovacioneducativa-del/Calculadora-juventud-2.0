@@ -22,13 +22,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-body {
-    font-family: 'Inter', sans-serif; width: 100vw; height: 100vh;
-    background-color: var(--bg-app); overflow: hidden;
-    transition: background-color 0.3s ease;
-}
+body { font-family: 'Inter', sans-serif; width: 100vw; height: 100vh; background-color: var(--bg-app); overflow: hidden; transition: background-color 0.3s ease; }
 
-/* PANTALLA DE INICIO */
 #splash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.6s ease, visibility 0.6s ease; }
 #splash-screen.hidden { opacity: 0; visibility: hidden; }
 .splash-content { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 30px; }
@@ -44,7 +39,6 @@ body {
 .start-btn:active { transform: scale(0.98); }
 .error-msg { color: #ef4444; font-size: 0.85rem; text-align: center; display: none; font-weight: 500; }
 
-/* LIENZO Y HUD */
 #viewport { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
 #ui-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5; pointer-events: none; }
 .hud-overlay { position: absolute; top: 80px; left: 20px; } 
@@ -53,7 +47,6 @@ body {
 
 #version-tag { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-secondary); pointer-events: none; opacity: 0.6; font-family: 'JetBrains Mono', monospace; }
 
-/* Botones Superiores Izquierdos */
 .top-control-btn { position: absolute; top: 20px; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--panel-bg); color: var(--text-secondary); font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s, background 0.3s; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; pointer-events: auto; }
 .top-control-btn:active { transform: scale(0.9); }
 
@@ -68,9 +61,10 @@ body {
 
 .tooltip { position: absolute; background: rgba(15, 23, 42, 0.95); color: white; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; pointer-events: none; z-index: 20; display: none; border: 1px solid rgba(255,255,255,0.1); transform: translate(15px, 15px); }
 
-/* CALCULADORA */
 .calculator-container { position: absolute; top: 0; right: 0; width: var(--calc-width-desktop); height: 100vh; background: var(--calc-bg); display: flex; flex-direction: column; overflow: hidden; border-left: 1px solid rgba(255,255,255,0.1); z-index: 10; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.2); }
 .calculator-container.hidden-calc { transform: translateX(105%); }
+.calculator-container.pulse { animation: pulse-anim 0.3s ease-out; }
+@keyframes pulse-anim { 0% { box-shadow: -10px 0 30px rgba(0,0,0,0.2); } 50% { box-shadow: -10px 0 40px rgba(34, 211, 238, 0.5); } 100% { box-shadow: -10px 0 30px rgba(0,0,0,0.2); } }
 
 .calc-header { background: var(--calc-surface); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); user-select: none; flex-shrink: 0; position: relative; }
 .header-title { color: #94a3b8; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; flex: 1; text-align: center; }
@@ -104,12 +98,9 @@ body {
 .toggle-btn.active { background: var(--btn-active); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
 .color-selector { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.8rem; color: #cbd5e1; }
-.color-options { display: flex; gap: 8px; }
-.color-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+.color-options { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.color-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s, border-color 0.2s; padding: 0; }
 .color-btn.active { border-color: white; transform: scale(1.1); }
-.color-btn.green { background: #006847; }
-.color-btn.yellow { background: #FFD700; }
-.color-btn.blue { background: #0033A0; }
 
 .slider-group { margin-bottom: 12px; }
 .slider-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; color: #cbd5e1; }
@@ -127,41 +118,20 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; b
 .key.enter { background: var(--screen-text); color: #0f172a; box-shadow: 0 3px 0 #0891b2; font-weight: bold; font-size: 0.96rem; }
 .key.enter:active { box-shadow: 0 0 0 #0891b2; }
 
-/* RESPONSIVE MÓVIL */
 @media (max-width: 768px) {
     .calculator-container { width: 100%; height: 92vh; top: auto; bottom: 0; border-left: none; border-top: 1px solid rgba(255,255,255,0.1); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); }
     .calculator-container.hidden-calc { transform: translateY(105%); }
-
     .calc-header { padding: 10px 16px; }
     .mobile-drag-handle { display: block; width: 40px; height: 5px; background: #64748b; border-radius: 3px; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); }
     .header-title { display: none; } 
     .close-calc-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
-
     .top-control-btn { top: 15px; width: 35px; height: 35px; font-size: 1rem; }
-    #play-btn { left: 15px; }
-    #video-btn { left: 60px; }
-    #screenshot-btn { left: 105px; }
-    #calc-toggle { left: 150px; }
-    #theme-toggle { left: 195px; }
-
+    #play-btn { left: 15px; } #video-btn { left: 60px; } #screenshot-btn { left: 105px; } #calc-toggle { left: 150px; } #theme-toggle { left: 195px; }
     .hud-overlay { top: 70px; left: 15px; }
-
-    .screen-container { padding: 10px 16px; }
-    .screen-output { font-size: 1.1rem; }
-    .controls-area { padding: 8px 12px; }
-    .dropdown-container { margin-bottom: 8px; }
-    .examples-btn { padding: 8px; font-size: 0.85rem; }
-    .view-toggle { margin-bottom: 8px; padding: 3px; }
-    .toggle-btn { padding: 6px; font-size: 0.8rem; }
-    .color-selector { margin-bottom: 8px; }
-    .slider-group { margin-bottom: 8px; }
-
-    .keypad { gap: 5px; padding: 8px; grid-auto-rows: minmax(28px, 1fr); }
-    .key { font-size: 0.75rem; }
-    .key.func { font-size: 0.65rem; }
-    .key.op { font-size: 0.85rem; }
-    .key.enter { font-size: 0.9rem; }
-
-    .splash-img { max-height: 40vh; }
-    .login-box { padding: 20px; }
+    .screen-container { padding: 10px 16px; } .screen-output { font-size: 1.1rem; }
+    .controls-area { padding: 8px 12px; } .dropdown-container { margin-bottom: 8px; } .examples-btn { padding: 8px; font-size: 0.85rem; }
+    .view-toggle { margin-bottom: 8px; padding: 3px; } .toggle-btn { padding: 6px; font-size: 0.8rem; }
+    .color-selector { margin-bottom: 8px; } .slider-group { margin-bottom: 8px; }
+    .keypad { gap: 5px; padding: 8px; grid-auto-rows: minmax(28px, 1fr); } .key { font-size: 0.75rem; } .key.func { font-size: 0.65rem; } .key.op { font-size: 0.85rem; } .key.enter { font-size: 0.9rem; }
+    .splash-img { max-height: 40vh; } .login-box { padding: 20px; }
 }
