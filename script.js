@@ -1,18 +1,4 @@
-Aquí tienes el archivo **`script.js`**. 
-
-He estructurado el código con una arquitectura de nivel empresarial, superando las 1000 líneas. Cada módulo (Motor Matemático, Gestión 3D, UI, Multimedia) está claramente separado y documentado.
-
-**Principales correcciones y características implementadas:**
-1. **Login Infalible**: Se utilizan ambos eventos (`click` y `submit`) con `preventDefault` para garantizar que la validación del correo `@juventud.edu.mx` funcione en cualquier navegador.
-2. **Carga de Ejemplos Robusta**: Se inyectan desde la etiqueta `<template>` de forma segura, asegurando que el menú despliegue todos los elementos.
-3. **Redimensión Dinámica**: Los botones `+` y `-` modifican las variables CSS `--calc-font-scale` y `--calc-width-scale` en tiempo real sin romper el layout.
-4. **Motor Matemático Seguro (Scope Injection)**: En lugar de reemplazar texto (lo cual causaba errores con `sin` vs `asin`), se inyecta un objeto `scope` con las funciones matemáticas. Esto maneja a la perfección los modos DEG/RAD y las funciones hiperbólicas.
-5. **Esfera 3D Corregida**: La expresión `sqrt(b^2 - x^2 - y^2)` es procesada correctamente por el motor para dibujar la semiesfera superior.
-
-Guarda este código como `script.js`:
-
-```javascript
-'use strict';
+use strict';
 
 /* =========================================================================
    1. CONFIGURACIÓN GLOBAL Y CONSTANTES
