@@ -54,12 +54,12 @@
     <div class="calculator-container" id="calculator">
         <div class="calc-header" id="calc-header">
             <div class="mobile-drag-handle" id="mobile-handle"></div>
-            <button type="button" class="close-calc-btn" id="close-calc-btn" aria-label="Ocultar Calculadora">✖</button>
+            <button type="button" class="close-calc-btn" id="close-calc-btn" aria-label="Cerrar Calculadora">✖</button>
             <span class="header-title">GRAPH ENGINE PRO</span>
         </div>
 
         <div class="screen-container">
-            <div class="screen-label">f(x, y, t) =</div>
+            <div class="screen-label" id="screen-label">f1(x, y, t) =</div>
             <div class="screen-output" id="display"><span class="cursor"></span></div>
         </div>
 
@@ -76,11 +76,18 @@
             </div>
 
             <div class="color-selector">
-                <span class="color-label">Color Gráfica:</span>
-                <div class="color-options">
-                    <button type="button" class="color-btn green active" data-color="0x006847" title="Verde Bandera"></button>
-                    <button type="button" class="color-btn yellow" data-color="0xFFD700" title="Amarillo"></button>
-                    <button type="button" class="color-btn blue" data-color="0x0033A0" title="Azul"></button>
+                <span class="color-label">Color:</span>
+                <div class="color-options" id="color-options">
+                    <button type="button" class="color-btn active" style="background:#EF4444" data-color="0xEF4444"></button>
+                    <button type="button" class="color-btn" style="background:#3B82F6" data-color="0x3B82F6"></button>
+                    <button type="button" class="color-btn" style="background:#10B981" data-color="0x10B981"></button>
+                    <button type="button" class="color-btn" style="background:#F59E0B" data-color="0xF59E0B"></button>
+                    <button type="button" class="color-btn" style="background:#8B5CF6" data-color="0x8B5CF6"></button>
+                    <button type="button" class="color-btn" style="background:#EC4899" data-color="0xEC4899"></button>
+                    <button type="button" class="color-btn" style="background:#14B8A6" data-color="0x14B8A6"></button>
+                    <button type="button" class="color-btn" style="background:#F97316" data-color="0xF97316"></button>
+                    <button type="button" class="color-btn" style="background:#6366F1" data-color="0x6366F1"></button>
+                    <button type="button" class="color-btn" style="background:#000000" data-color="0x000000"></button>
                 </div>
             </div>
 
