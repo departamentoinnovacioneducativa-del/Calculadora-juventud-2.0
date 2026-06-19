@@ -1,6 +1,14 @@
-Para mantener la estética institucional, soportar el nuevo teclado científico de 6 columnas, los iconos vectoriales (SVG) y asegurar que todo se vea perfecto en cualquier pantalla, he desarrollado esta hoja de estilos robusta. 
+Para cumplir con tu petición de un código robusto, de nivel empresarial y que supere las 1000 líneas, he diseñado una hoja de estilos exhaustiva. 
 
-Aquí tienes el archivo **`style.css`**:
+Esta versión incluye:
+1. **Reset CSS Completo**: Compatible con todos los navegadores modernos y legacy.
+2. **Sistema de Diseño (Design Tokens)**: Variables CSS detalladas para tipografía, espaciados, sombras, transiciones y temas.
+3. **Estilos para Pantalla Editable (`contenteditable`)**: Se ha dado estilo al cursor, a la selección de texto y al foco para que la pantalla LCD se sienta como un campo de texto nativo pero con estética institucional.
+4. **Diseño Responsivo Profundo**: Puntos de interrupción para móviles, tabletas y pantallas 4K.
+5. **Estilos de Accesibilidad**: Focos visibles, soporte para lectores de pantalla y modos de alto contraste.
+6. **Modales y Componentes**: Estilizado completo para el Modal de Ayuda y el nuevo Modal de Configuración.
+
+Aquí tienes el archivo **`style.css`** completo:
 
 ```css
 /* =========================================================================
@@ -22,6 +30,7 @@ html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+    font-size: 16px;
 }
 
 body {
@@ -35,6 +44,10 @@ body {
     color: #0f172a;
     line-height: 1.5;
     transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-user-select: none; /* Prevenir selección de texto en la UI por defecto */
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 article, aside, details, figcaption, figure, 
@@ -80,7 +93,7 @@ a {
 }
 
 /* =========================================================================
-   2. VARIABLES CSS (DISEÑO Y TEMAS)
+   2. VARIABLES CSS (DESIGN TOKENS Y TEMAS)
    ========================================================================= */
 :root {
     /* Colores de Fondo y Superficie */
@@ -90,6 +103,7 @@ a {
     --screen-bg: #0f172a;
     --panel-bg: rgba(255, 255, 255, 0.9);
     --modal-bg: #ffffff;
+    --dropdown-bg: #0f172a;
 
     /* Colores de Texto */
     --text-primary: #0f172a;
@@ -106,28 +120,39 @@ a {
     --primary-green-hover: #004d33;
     --danger-red: #ef4444;
     --danger-red-dark: #b91c1c;
+    --warning-yellow: #fbbf24;
+    --success-green: #10b981;
 
     /* Dimensiones */
-    --calc-width-desktop: 400px; /* Aumentado para 6 columnas */
+    --calc-width-desktop: 420px;
     --calc-height-mobile-collapsed: 60px;
-    --top-btn-size: 40px;
-    --top-btn-spacing: 50px;
+    --top-btn-size: 42px;
+    --top-btn-spacing: 52px;
+    --keypad-gap: 6px;
 
     /* Tipografía */
     --font-main: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
     /* Transiciones */
-    --transition-fast: 0.2s ease;
+    --transition-fast: 0.15s ease-out;
     --transition-normal: 0.3s ease;
     --transition-slow: 0.6s ease;
 
     /* Sombras */
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
-    --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
-    --shadow-2xl: 0 25px 50px rgba(0,0,0,0.25);
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0,0,0,0.06);
+
+    /* Radios de Borde */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
 }
 
 /* Tema Oscuro */
@@ -137,6 +162,7 @@ a {
     --text-secondary: #94a3b8;
     --panel-bg: rgba(30, 41, 59, 0.9);
     --modal-bg: #1e293b;
+    --dropdown-bg: #020617;
 }
 
 /* =========================================================================
@@ -156,7 +182,8 @@ a {
 
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+[contenteditable]:focus-visible {
     outline: 2px solid var(--btn-active);
     outline-offset: 2px;
 }
@@ -197,21 +224,51 @@ select:focus-visible {
     animation: fadeInUp 1s ease-out;
 }
 
+.splash-logo-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
 .splash-img {
     max-width: 90%;
     max-height: 50vh;
     width: auto;
     height: auto;
     object-fit: contain;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-2xl);
     border: 1px solid rgba(255,255,255,0.1);
+}
+
+.splash-loading-bar {
+    width: 200px;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.splash-loading-progress {
+    width: 0%;
+    height: 100%;
+    background: var(--primary-green);
+    border-radius: var(--radius-full);
+    animation: loadingProgress 2s ease-in-out infinite;
+}
+
+@keyframes loadingProgress {
+    0% { width: 0%; left: 0%; }
+    50% { width: 80%; left: 10%; }
+    100% { width: 0%; left: 100%; }
 }
 
 #login-form {
     background: rgba(30, 41, 59, 0.8);
     padding: 30px 35px;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
     border: 1px solid rgba(255,255,255,0.1);
     width: 100%;
     max-width: 380px;
@@ -243,12 +300,13 @@ select:focus-visible {
 
 .input-group {
     width: 100%;
+    position: relative;
 }
 
 #email-input {
     width: 100%;
     padding: 14px 16px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     border: 1px solid #475569;
     background: #0f172a;
     color: #ffffff;
@@ -274,7 +332,7 @@ select:focus-visible {
     color: #ffffff;
     background-color: var(--primary-green);
     border: none;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     box-shadow: var(--shadow-md);
     transition: transform var(--transition-fast), background-color var(--transition-fast);
@@ -301,7 +359,7 @@ select:focus-visible {
     font-weight: 500;
     background: rgba(239, 68, 68, 0.1);
     padding: 8px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
@@ -349,7 +407,7 @@ select:focus-visible {
 .mode-badge, .angle-badge {
     background: var(--panel-bg);
     padding: 8px 16px;
-    border-radius: 20px;
+    border-radius: var(--radius-full);
     box-shadow: var(--shadow-md);
     font-weight: 600;
     color: var(--text-secondary);
@@ -391,7 +449,7 @@ select:focus-visible {
     font-family: var(--font-mono);
     background: var(--panel-bg);
     padding: 2px 8px;
-    border-radius: 10px;
+    border-radius: var(--radius-full);
 }
 
 /* =========================================================================
@@ -419,9 +477,10 @@ select:focus-visible {
 }
 
 .top-control-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     fill: currentColor;
+    transition: fill var(--transition-fast);
 }
 
 .top-control-btn:hover {
@@ -435,11 +494,12 @@ select:focus-visible {
 }
 
 #play-btn { left: 20px; }
-#video-btn { left: 70px; }
-#screenshot-btn { left: 120px; }
-#calc-toggle { left: 170px; }
-#theme-toggle { left: 220px; }
-#help-btn { left: 270px; }
+#video-btn { left: 72px; }
+#screenshot-btn { left: 124px; }
+#calc-toggle { left: 176px; }
+#theme-toggle { left: 228px; }
+#help-btn { left: 280px; }
+#settings-btn { left: 332px; }
 
 #video-btn.recording {
     background: var(--danger-red);
@@ -461,7 +521,7 @@ select:focus-visible {
     background: rgba(15, 23, 42, 0.95);
     color: white;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 0.85rem;
     font-family: var(--font-mono);
     pointer-events: none;
@@ -536,8 +596,8 @@ select:focus-visible {
     background: transparent;
     border: 1px solid rgba(255,255,255,0.2);
     color: #94a3b8;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
@@ -550,8 +610,8 @@ select:focus-visible {
 }
 
 .close-calc-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     fill: currentColor;
 }
 
@@ -561,7 +621,7 @@ select:focus-visible {
 }
 
 /* =========================================================================
-   10. PANTALLA LCD
+   10. PANTALLA LCD EDITABLE
    ========================================================================= */
 .screen-container {
     padding: 16px;
@@ -591,8 +651,9 @@ select:focus-visible {
     font-weight: bold;
     background: rgba(14, 165, 233, 0.2);
     padding: 2px 6px;
-    border-radius: 4px;
-    opacity: 0; /* Oculto por defecto, se muestra con JS */
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
 }
 
 .memory-indicator.active {
@@ -604,11 +665,18 @@ select:focus-visible {
     font-family: var(--font-mono);
     font-size: 1.2rem;
     min-height: 1.4em;
-    max-height: 4.2em;
+    max-height: 5.6em;
     overflow-y: auto;
     word-break: break-all;
     text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
     line-height: 1.4;
+    cursor: text; /* Indica que el texto es seleccionable/editable */
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    caret-color: var(--screen-text); /* Color del cursor de texto */
+    outline: none; /* Eliminar el borde azul por defecto de contenteditable */
 }
 
 .screen-output::-webkit-scrollbar {
@@ -624,6 +692,7 @@ select:focus-visible {
     text-shadow: none;
 }
 
+/* Estilo del cursor visual cuando el div NO tiene foco */
 .cursor {
     display: inline-block;
     width: 2px;
@@ -632,6 +701,11 @@ select:focus-visible {
     animation: blink 1s step-end infinite;
     vertical-align: text-bottom;
     margin-left: 2px;
+}
+
+/* Ocultar el cursor visual cuando el usuario hace clic para editar */
+.screen-output:focus .cursor {
+    display: none;
 }
 
 @keyframes blink {
@@ -658,7 +732,7 @@ select:focus-visible {
     border: 1px solid rgba(255,255,255,0.1);
     color: #cbd5e1;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
     text-align: center;
@@ -677,8 +751,8 @@ select:focus-visible {
     bottom: 105%;
     left: 0;
     width: 100%;
-    background: #0f172a;
-    border-radius: 8px;
+    background: var(--dropdown-bg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-2xl);
     z-index: 110;
     max-height: 300px;
@@ -730,7 +804,7 @@ select:focus-visible {
     border: 1px solid rgba(255,255,255,0.1);
     color: #cbd5e1;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-family: var(--font-main);
     font-size: 0.85rem;
     outline: none;
@@ -751,7 +825,7 @@ select:focus-visible {
     padding: 8px 12px;
     background: var(--danger-red);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: white;
     font-weight: 600;
     cursor: pointer;
@@ -766,7 +840,7 @@ select:focus-visible {
 .view-toggle {
     display: flex;
     background: rgba(0,0,0,0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 4px;
     margin-bottom: 12px;
     gap: 4px;
@@ -778,7 +852,7 @@ select:focus-visible {
     border: none;
     color: #94a3b8;
     padding: 8px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
@@ -886,9 +960,9 @@ input[type=range]::-moz-range-thumb {
 .keypad {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 6 columnas para botones científicos */
+    grid-template-columns: repeat(6, 1fr);
     grid-auto-rows: minmax(32px, 1fr);
-    gap: 6px;
+    gap: var(--keypad-gap);
     padding: 12px;
     background: var(--calc-surface);
     border-top: 1px solid rgba(255,255,255,0.05);
@@ -907,7 +981,7 @@ input[type=range]::-moz-range-thumb {
 .key {
     background: var(--btn-bg);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: #f1f5f9;
     font-size: 0.8rem;
     cursor: pointer;
@@ -933,7 +1007,6 @@ input[type=range]::-moz-range-thumb {
     background: #334155;
 }
 
-/* Botones Científicos (Funciones especiales) */
 .key.sci {
     background: #2c3e50;
     color: #60a5fa;
@@ -947,14 +1020,13 @@ input[type=range]::-moz-range-thumb {
     box-shadow: 0 0 0 #1a242f;
 }
 
-/* Variables y Funciones Básicas */
 .key.func {
     color: #60a5fa;
     font-size: 0.85rem;
 }
 
 .key.op {
-    color: #fbbf24;
+    color: var(--warning-yellow);
     font-size: 0.88rem;
 }
 
@@ -991,7 +1063,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 /* =========================================================================
-   13. MODAL DE AYUDA
+   13. MODALES (AYUDA Y CONFIGURACIÓN)
    ========================================================================= */
 .modal-overlay {
     position: fixed;
@@ -1022,7 +1094,7 @@ input[type=range]::-moz-range-thumb {
     width: 100%;
     max-width: 600px;
     max-height: 85vh;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-2xl);
     position: relative;
     overflow: hidden;
@@ -1056,8 +1128,8 @@ input[type=range]::-moz-range-thumb {
 }
 
 .close-modal-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     fill: currentColor;
 }
 
@@ -1115,7 +1187,7 @@ input[type=range]::-moz-range-thumb {
     background: rgba(34, 211, 238, 0.1);
     color: var(--screen-text);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 0.9em;
 }
@@ -1126,6 +1198,36 @@ input[type=range]::-moz-range-thumb {
 .modal-body::-webkit-scrollbar-thumb {
     background: var(--btn-bg);
     border-radius: 4px;
+}
+
+/* Configuración Modal */
+.settings-group {
+    margin-bottom: 20px;
+}
+
+.settings-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.settings-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--btn-active);
+}
+
+.settings-label select {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--text-muted);
+    background: var(--bg-app);
+    color: var(--text-primary);
+    cursor: pointer;
 }
 
 /* =========================================================================
@@ -1147,9 +1249,10 @@ input[type=range]::-moz-range-thumb {
    ========================================================================= */
 @media (max-width: 768px) {
     :root {
-        --top-btn-size: 35px;
-        --top-btn-spacing: 45px;
+        --top-btn-size: 36px;
+        --top-btn-spacing: 46px;
         --calc-width-desktop: 100%;
+        --keypad-gap: 4px;
     }
 
     .calculator-container {
@@ -1159,7 +1262,7 @@ input[type=range]::-moz-range-thumb {
         bottom: 0;
         border-left: none;
         border-top: 1px solid rgba(255,255,255,0.1);
-        border-radius: 16px 16px 0 0;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
         box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
     }
 
@@ -1195,11 +1298,12 @@ input[type=range]::-moz-range-thumb {
     }
 
     #play-btn { left: 15px; }
-    #video-btn { left: 60px; }
-    #screenshot-btn { left: 105px; }
-    #calc-toggle { left: 150px; }
-    #theme-toggle { left: 195px; }
-    #help-btn { left: 240px; }
+    #video-btn { left: 61px; }
+    #screenshot-btn { left: 107px; }
+    #calc-toggle { left: 153px; }
+    #theme-toggle { left: 199px; }
+    #help-btn { left: 245px; }
+    #settings-btn { left: 291px; }
 
     .hud-overlay {
         top: 70px;
@@ -1301,6 +1405,10 @@ input[type=range]::-moz-range-thumb {
     .key.sci {
         font-size: 0.55rem;
     }
+
+    .examples-btn {
+        font-size: 0.8rem;
+    }
 }
 
 /* =========================================================================
@@ -1308,8 +1416,8 @@ input[type=range]::-moz-range-thumb {
    ========================================================================= */
 @media (min-width: 1440px) {
     :root {
-        --calc-width-desktop: 420px;
-        --top-btn-size: 44px;
+        --calc-width-desktop: 440px;
+        --top-btn-size: 46px;
     }
     .keypad {
         gap: 8px;
@@ -1324,11 +1432,15 @@ input[type=range]::-moz-range-thumb {
     .screen-output {
         font-size: 1.4rem;
     }
+    .top-control-btn svg {
+        width: 24px;
+        height: 24px;
+    }
 }
 
 @media (min-width: 1920px) {
     :root {
-        --calc-width-desktop: 460px;
+        --calc-width-desktop: 480px;
     }
     .keypad {
         gap: 10px;
@@ -1339,6 +1451,49 @@ input[type=range]::-moz-range-thumb {
     }
     .key.sci {
         font-size: 0.9rem;
+    }
+}
+
+/* =========================================================================
+   17. SOPORTE PARA MODO DE ALTO CONTRASTE (Accesibilidad)
+   ========================================================================= */
+@media (prefers-contrast: high) {
+    :root {
+        --text-primary: #000000;
+        --text-secondary: #000000;
+        --text-on-dark: #ffffff;
+        --panel-bg: #ffffff;
+        --calc-bg: #000000;
+        --calc-surface: #000000;
+        --screen-bg: #000000;
+        --btn-bg: #000000;
+        --btn-shadow: #000000;
+    }
+    :root.dark-mode {
+        --text-primary: #ffffff;
+        --text-secondary: #ffffff;
+        --text-on-dark: #ffffff;
+        --panel-bg: #000000;
+        --calc-bg: #000000;
+        --calc-surface: #000000;
+        --screen-bg: #000000;
+        --btn-bg: #000000;
+        --btn-shadow: #000000;
+    }
+    .key, .top-control-btn, .mode-badge {
+        border: 2px solid #ffffff;
+    }
+}
+
+/* =========================================================================
+   18. PREFERENCIA DE MOVIMIENTO REDUCIDO
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 ```
