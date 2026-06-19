@@ -69,6 +69,12 @@
                 <div id="examples-dropdown" class="examples-dropdown"></div>
             </div>
 
+            <!-- Gestor de Múltiples Gráficas -->
+            <div class="graph-manager">
+                <select id="graph-selector" class="graph-selector"></select>
+                <button type="button" id="delete-graph-btn" class="delete-graph-btn">Borrar</button>
+            </div>
+
             <div class="view-toggle">
                 <button type="button" class="toggle-btn" id="btn-1d">1D</button>
                 <button type="button" class="toggle-btn active" id="btn-2d">2D</button>
@@ -143,10 +149,12 @@
             <button type="button" class="key" data-insert="0">0</button>
             <button type="button" class="key" data-insert=".">.</button>
             <button type="button" class="key op" data-insert="pi">π</button>
-            <button type="button" class="key op" data-action="backspace">DEL</button>
+            <button type="button" class="key op" data-insert="=">=</button>
 
-            <button type="button" class="key clear" data-action="clear">AC</button>
-            <button type="button" class="key enter" data-action="calculate" style="grid-column: span 4;">=</button>
+            <button type="button" class="key clear" data-action="clear" style="grid-column: span 1;">AC</button>
+            <button type="button" class="key func" data-action="backspace" style="grid-column: span 1;">DEL</button>
+            <button type="button" class="key enter" data-action="calculate" style="grid-column: span 2;">ENTER</button>
+            <button type="button" class="key op" data-action="next" style="grid-column: span 1; background: #10B981; color: white;">SGT</button>
         </div>
     </div>
 
