@@ -1,3 +1,8 @@
+Para mantener la estética institucional, soportar el nuevo teclado científico de 6 columnas, los iconos vectoriales (SVG) y asegurar que todo se vea perfecto en cualquier pantalla, he desarrollado esta hoja de estilos robusta. 
+
+Aquí tienes el archivo **`style.css`**:
+
+```css
 /* =========================================================================
    1. RESET CSS EXHAUSTIVO Y NORMALIZACIÓN
    ========================================================================= */
@@ -103,7 +108,7 @@ a {
     --danger-red-dark: #b91c1c;
 
     /* Dimensiones */
-    --calc-width-desktop: 340px;
+    --calc-width-desktop: 400px; /* Aumentado para 6 columnas */
     --calc-height-mobile-collapsed: 60px;
     --top-btn-size: 40px;
     --top-btn-spacing: 50px;
@@ -236,6 +241,10 @@ select:focus-visible {
     font-family: var(--font-mono);
 }
 
+.input-group {
+    width: 100%;
+}
+
 #email-input {
     width: 100%;
     padding: 14px 16px;
@@ -324,17 +333,20 @@ select:focus-visible {
     width: 100vw;
     height: 100vh;
     z-index: 5;
-    pointer-events: none; /* Permite clics a través del overlay hacia el 3D */
+    pointer-events: none;
 }
 
 .hud-overlay {
     position: absolute;
-    top: 80px; /* Debajo de los botones superiores */
+    top: 80px;
     left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     pointer-events: none;
 }
 
-.mode-badge {
+.mode-badge, .angle-badge {
     background: var(--panel-bg);
     padding: 8px 16px;
     border-radius: 20px;
@@ -348,6 +360,14 @@ select:focus-visible {
     -webkit-backdrop-filter: blur(4px);
     transition: background var(--transition-normal), color var(--transition-normal);
     border: 1px solid rgba(255,255,255,0.1);
+    width: fit-content;
+}
+
+.angle-badge {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    background: rgba(14, 165, 233, 0.2);
+    color: var(--btn-active);
 }
 
 .mode-dot {
@@ -386,7 +406,6 @@ select:focus-visible {
     border: none;
     background: var(--panel-bg);
     color: var(--text-secondary);
-    font-size: 1.2rem;
     cursor: pointer;
     box-shadow: var(--shadow-md);
     transition: transform var(--transition-fast), background var(--transition-normal), color var(--transition-normal);
@@ -395,13 +414,20 @@ select:focus-visible {
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: auto; /* Habilita el clic en los botones */
+    pointer-events: auto;
     border: 1px solid rgba(255,255,255,0.1);
+}
+
+.top-control-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
 }
 
 .top-control-btn:hover {
     transform: scale(1.1);
     background: rgba(255,255,255,1);
+    color: var(--btn-active);
 }
 
 .top-control-btn:active {
@@ -480,7 +506,6 @@ select:focus-visible {
     100% { box-shadow: -10px 0 30px rgba(0,0,0,0.2); }
 }
 
-/* Cabecera */
 .calc-header {
     background: var(--calc-surface);
     padding: 12px 16px;
@@ -515,7 +540,6 @@ select:focus-visible {
     height: 26px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -523,6 +547,12 @@ select:focus-visible {
     padding: 0;
     position: relative;
     z-index: 10;
+}
+
+.close-calc-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
 }
 
 .close-calc-btn:hover {
@@ -540,13 +570,33 @@ select:focus-visible {
     flex-shrink: 0;
 }
 
+.screen-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
 .screen-label {
     color: var(--text-muted);
     font-size: 0.7rem;
-    margin-bottom: 4px;
     font-family: var(--font-mono);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.memory-indicator {
+    font-size: 0.7rem;
+    color: var(--btn-active);
+    font-weight: bold;
+    background: rgba(14, 165, 233, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0; /* Oculto por defecto, se muestra con JS */
+}
+
+.memory-indicator.active {
+    opacity: 1;
 }
 
 .screen-output {
@@ -668,7 +718,6 @@ select:focus-visible {
     color: var(--screen-text);
 }
 
-/* Gestor de Gráficas */
 .graph-manager {
     display: flex;
     gap: 8px;
@@ -714,7 +763,6 @@ select:focus-visible {
     background: var(--danger-red-dark);
 }
 
-/* Conmutador de Dimensión */
 .view-toggle {
     display: flex;
     background: rgba(0,0,0,0.3);
@@ -748,7 +796,6 @@ select:focus-visible {
     box-shadow: var(--shadow-sm);
 }
 
-/* Selector de Color */
 .color-selector {
     display: flex;
     justify-content: space-between;
@@ -789,7 +836,6 @@ select:focus-visible {
     box-shadow: 0 0 5px rgba(255,255,255,0.5);
 }
 
-/* Deslizadores */
 .slider-group {
     margin-bottom: 12px;
 }
@@ -835,18 +881,27 @@ input[type=range]::-moz-range-thumb {
 }
 
 /* =========================================================================
-   12. TECLADO NUMÉRICO
+   12. TECLADO NUMÉRICO Y CIENTÍFICO
    ========================================================================= */
 .keypad {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr); /* 6 columnas para botones científicos */
     grid-auto-rows: minmax(32px, 1fr);
     gap: 6px;
     padding: 12px;
     background: var(--calc-surface);
     border-top: 1px solid rgba(255,255,255,0.05);
     min-height: 0;
+    overflow-y: auto;
+}
+
+.keypad::-webkit-scrollbar {
+    width: 6px;
+}
+.keypad::-webkit-scrollbar-thumb {
+    background: var(--btn-bg);
+    border-radius: 3px;
 }
 
 .key {
@@ -878,9 +933,24 @@ input[type=range]::-moz-range-thumb {
     background: #334155;
 }
 
+/* Botones Científicos (Funciones especiales) */
+.key.sci {
+    background: #2c3e50;
+    color: #60a5fa;
+    font-size: 0.7rem;
+    box-shadow: 0 3px 0 #1a242f;
+}
+.key.sci:hover {
+    background: #34495e;
+}
+.key.sci:active {
+    box-shadow: 0 0 0 #1a242f;
+}
+
+/* Variables y Funciones Básicas */
 .key.func {
     color: #60a5fa;
-    font-size: 0.68rem;
+    font-size: 0.85rem;
 }
 
 .key.op {
@@ -976,7 +1046,6 @@ input[type=range]::-moz-range-thumb {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    font-size: 1rem;
     cursor: pointer;
     color: var(--text-secondary);
     transition: background var(--transition-fast);
@@ -984,6 +1053,12 @@ input[type=range]::-moz-range-thumb {
     align-items: center;
     justify-content: center;
     z-index: 10;
+}
+
+.close-modal-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
 .close-modal-btn:hover {
@@ -1074,6 +1149,7 @@ input[type=range]::-moz-range-thumb {
     :root {
         --top-btn-size: 35px;
         --top-btn-spacing: 45px;
+        --calc-width-desktop: 100%;
     }
 
     .calculator-container {
@@ -1170,21 +1246,25 @@ input[type=range]::-moz-range-thumb {
     }
 
     .keypad {
-        gap: 5px;
+        gap: 4px;
         padding: 8px;
         grid-auto-rows: minmax(28px, 1fr);
     }
 
     .key {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+    }
+
+    .key.sci {
+        font-size: 0.6rem;
     }
 
     .key.func {
-        font-size: 0.65rem;
+        font-size: 0.75rem;
     }
 
     .key.op {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 
     .key.enter {
@@ -1208,6 +1288,19 @@ input[type=range]::-moz-range-thumb {
         width: 16px;
         height: 16px;
     }
+    
+    .keypad {
+        gap: 3px;
+        padding: 6px;
+    }
+    
+    .key {
+        font-size: 0.65rem;
+    }
+    
+    .key.sci {
+        font-size: 0.55rem;
+    }
 }
 
 /* =========================================================================
@@ -1215,15 +1308,18 @@ input[type=range]::-moz-range-thumb {
    ========================================================================= */
 @media (min-width: 1440px) {
     :root {
-        --calc-width-desktop: 380px;
+        --calc-width-desktop: 420px;
         --top-btn-size: 44px;
     }
     .keypad {
-        gap: 10px;
-        padding: 20px;
+        gap: 8px;
+        padding: 16px;
     }
     .key {
-        font-size: 1rem;
+        font-size: 0.9rem;
+    }
+    .key.sci {
+        font-size: 0.8rem;
     }
     .screen-output {
         font-size: 1.4rem;
@@ -1232,6 +1328,17 @@ input[type=range]::-moz-range-thumb {
 
 @media (min-width: 1920px) {
     :root {
-        --calc-width-desktop: 420px;
+        --calc-width-desktop: 460px;
+    }
+    .keypad {
+        gap: 10px;
+        padding: 20px;
+    }
+    .key {
+        font-size: 1rem;
+    }
+    .key.sci {
+        font-size: 0.9rem;
     }
 }
+```
