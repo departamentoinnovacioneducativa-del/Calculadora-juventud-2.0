@@ -7,17 +7,22 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Calculadora Gráfica Institucional 2D/3D para el dominio @juventud.edu.mx">
-    <meta name="author" content="Graph Engine Pro">
+    <meta name="description" content="Calculadora Científica y Graficadora 2D/3D Institucional. Soporte para funciones hiperbólicas, trigonométricas, matrices y múltiples gráficas.">
+    <meta name="author" content="Graph Engine Pro Institucional">
     <meta name="theme-color" content="#0f172a">
     
-    <!-- Precarga de imagen institucional para carga instantánea -->
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="Calculadora Científica Gráfica Institucional">
+    <meta property="og:description" content="Motor gráfico avanzado 2D/3D con análisis matemático completo.">
+    <meta property="og:type" content="website">
+    
+    <!-- Precarga de imagen institucional -->
     <link rel="preload" as="image" href="Calculadora.jpg">
     
     <!-- Fuentes tipográficas de Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- Hoja de estilos externa -->
     <link rel="stylesheet" href="style.css">
@@ -25,17 +30,15 @@
     <!-- =========================================
          BIBLIOTECAS EXTERNAS (THREE.JS)
          ========================================= -->
-    <!-- Three.js núcleo (versión estable r128) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- OrbitControls para manipulación 3D -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-    <title>Calculadora Gráfica Institucional</title>
+    <title>Calculadora Científica Gráfica Institucional</title>
 </head>
 <body>
 
     <!-- =========================================
-         PANTALLA DE INICIO (SPLASH SCREEN) Y AUTENTICACIÓN
+         PANTALLA DE INICIO (SPLASH SCREEN) Y LOGIN
          ========================================= -->
     <div id="splash-screen" role="dialog" aria-labelledby="login-title" aria-modal="true">
         <div class="splash-content">
@@ -45,20 +48,21 @@
                 class="splash-img"
             >
             
-            <!-- Formulario de Autenticación Estricta -->
             <form id="login-form" class="login-box" autocomplete="off" onsubmit="return false;">
                 <h2 id="login-title">Acceso Institucional</h2>
                 <p class="login-subtitle">Verificación de dominio autorizado</p>
                 
-                <input 
-                    type="email" 
-                    id="email-input" 
-                    name="email" 
-                    placeholder="tu.correo@juventud.edu.mx" 
-                    autocomplete="off" 
-                    required
-                    aria-required="true"
-                >
+                <div class="input-group">
+                    <input 
+                        type="email" 
+                        id="email-input" 
+                        name="email" 
+                        placeholder="tu.correo@juventud.edu.mx" 
+                        autocomplete="off" 
+                        required
+                        aria-required="true"
+                    >
+                </div>
                 
                 <button 
                     type="submit" 
@@ -90,129 +94,70 @@
          ========================================= -->
     <div id="ui-overlay">
         
-        <!-- Indicador de Modo Actual (1D, 2D, 3D) -->
+        <!-- Indicador de Modo Actual (1D, 2D, 3D) y Ángulo (DEG/RAD) -->
         <div class="hud-overlay">
             <div class="mode-badge" aria-live="polite">
                 <div class="mode-dot" id="status-dot"></div>
                 <span id="status-text">MODO 2D</span>
             </div>
+            <div class="angle-badge" id="angle-badge" aria-live="polite">RAD</div>
         </div>
 
-        <!-- Botones de Control Superior Izquierdo -->
-        <button 
-            type="button" 
-            id="play-btn" 
-            class="top-control-btn" 
-            aria-label="Animar gráfica"
-            title="Iniciar o pausar animación"
-        >
-            ▶️
+        <!-- Botones de Control Superior Izquierdo (SVG Vectorial) -->
+        <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica" title="Iniciar o pausar animación">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </button>
         
-        <button 
-            type="button" 
-            id="video-btn" 
-            class="top-control-btn" 
-            aria-label="Grabar video"
-            title="Grabar y descargar video"
-        >
-            🎥
+        <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video" title="Grabar y descargar video">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
         </button>
         
-        <button 
-            type="button" 
-            id="screenshot-btn" 
-            class="top-control-btn" 
-            aria-label="Captura de pantalla"
-            title="Descargar imagen PNG"
-        >
-            📸
+        <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla" title="Descargar imagen PNG">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 10.5l4.77-8.26C13.47 2.09 12.75 2 12 2c-2.4 0-4.6.85-6.32 2.25l3.66 6.35.06-.1zM21.54 9c-.92-2.92-3.15-5.26-6-6.34L11.88 9h9.66zm.26 1h-7.49l.29.5 4.76 8.25C21 16.97 22 14.61 22 12c0-.69-.07-1.35-.2-2zM8.54 12l-3.9-6.75C3.01 7.03 2 9.39 2 12c0 .69.07 1.35.2 2h7.49l-1.15-2zm-6.08 3c.92 2.92 3.15 5.26 6 6.34L12.12 15H2.46zm11.27 0l-3.9 6.76c.7.15 1.42.24 2.17.24 2.4 0 4.6-.85 6.32-2.25l-3.66-6.35-.93 1.6z"/></svg>
         </button>
         
-        <button 
-            type="button" 
-            id="calc-toggle" 
-            class="top-control-btn" 
-            aria-label="Mostrar u Ocultar Calculadora"
-            title="Mostrar/Ocultar panel"
-        >
-            🧮
+        <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar u Ocultar Calculadora" title="Mostrar/Ocultar panel">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm-7 16H5v-3h7v3zm0-4H5v-3h7v3zm0-4H5V8h7v3zm7 8h-5V8h5v11z"/></svg>
         </button>
         
-        <button 
-            type="button" 
-            id="theme-toggle" 
-            class="top-control-btn" 
-            aria-label="Cambiar tema claro u oscuro"
-            title="Cambiar tema"
-        >
-            🌙
+        <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema claro u oscuro" title="Cambiar tema">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4C14.92 2.04 14.46 2 14 2h-2z"/></svg>
         </button>
 
-        <!-- Botón de Ayuda (Abre modal de instrucciones) -->
-        <button 
-            type="button" 
-            id="help-btn" 
-            class="top-control-btn" 
-            aria-label="Ayuda e instrucciones"
-            title="Manual de uso"
-        >
-            ❓
+        <button type="button" id="help-btn" class="top-control-btn" aria-label="Ayuda e instrucciones" title="Manual de uso">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
         </button>
 
         <!-- Tooltip de Coordenadas -->
-        <div 
-            id="tooltip" 
-            class="tooltip" 
-            role="tooltip"
-        ></div>
+        <div id="tooltip" class="tooltip" role="tooltip"></div>
         
         <!-- Etiqueta de Versión -->
-        <div id="version-tag">versión 2.033</div>
+        <div id="version-tag">versión 3.0 - Scientific Edition</div>
     </div>
 
     <!-- =========================================
          PANEL DE LA CALCULADORA (Derecha/Inferior)
          ========================================= -->
-    <div 
-        class="calculator-container" 
-        id="calculator"
-        role="region"
-        aria-label="Panel de Calculadora"
-    >
+    <div class="calculator-container" id="calculator" role="region" aria-label="Panel de Calculadora Científica">
+        
         <!-- Cabecera del Panel -->
         <div class="calc-header" id="calc-header">
             <div class="mobile-drag-handle" id="mobile-handle"></div>
             
-            <button 
-                type="button" 
-                class="close-calc-btn" 
-                id="close-calc-btn" 
-                aria-label="Cerrar Calculadora"
-                title="Cerrar panel"
-            >
-                ✖
+            <button type="button" class="close-calc-btn" id="close-calc-btn" aria-label="Cerrar Calculadora" title="Cerrar panel">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
             
-            <span class="header-title">GRAPH ENGINE PRO</span>
+            <span class="header-title">SCIENTIFIC GRAPH ENGINE</span>
         </div>
 
         <!-- Pantalla LCD de Expresión -->
         <div class="screen-container">
-            <div 
-                class="screen-label" 
-                id="screen-label"
-                aria-label="Etiqueta de función actual"
-            >
-                f1(x, y, t) =
+            <div class="screen-top-row">
+                <div class="screen-label" id="screen-label" aria-label="Etiqueta de función actual">f1(x, y, t) =</div>
+                <div class="memory-indicator" id="memory-indicator" aria-live="polite">M</div>
             </div>
-            <div 
-                class="screen-output" 
-                id="display" 
-                role="textbox" 
-                aria-live="polite" 
-                aria-readonly="true"
-            >
+            <div class="screen-output" id="display" role="textbox" aria-live="polite" aria-readonly="true">
                 <span class="cursor"></span>
             </div>
         </div>
@@ -222,79 +167,29 @@
             
             <!-- Menú Desplegable de Ejemplos -->
             <div class="dropdown-container">
-                <button 
-                    type="button" 
-                    id="examples-btn" 
-                    class="examples-btn"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                >
+                <button type="button" id="examples-btn" class="examples-btn" aria-haspopup="true" aria-expanded="false">
                     Ejemplos Rápidos ⌄
                 </button>
-                <div 
-                    id="examples-dropdown" 
-                    class="examples-dropdown"
-                    role="menu"
-                ></div>
+                <div id="examples-dropdown" class="examples-dropdown" role="menu"></div>
             </div>
 
             <!-- Gestor de Múltiples Gráficas -->
             <div class="graph-manager">
-                <select 
-                    id="graph-selector" 
-                    class="graph-selector"
-                    aria-label="Seleccionar gráfica para editar"
-                ></select>
-                <button 
-                    type="button" 
-                    id="delete-graph-btn" 
-                    class="delete-graph-btn"
-                    title="Borrar la gráfica seleccionada"
-                >
-                    Borrar
-                </button>
+                <select id="graph-selector" class="graph-selector" aria-label="Seleccionar gráfica para editar"></select>
+                <button type="button" id="delete-graph-btn" class="delete-graph-btn" title="Borrar la gráfica seleccionada">Borrar</button>
             </div>
 
             <!-- Conmutador de Dimensión (1D / 2D / 3D) -->
             <div class="view-toggle" role="tablist">
-                <button 
-                    type="button" 
-                    class="toggle-btn" 
-                    id="btn-1d"
-                    role="tab"
-                    aria-selected="false"
-                >
-                    1D
-                </button>
-                <button 
-                    type="button" 
-                    class="toggle-btn active" 
-                    id="btn-2d"
-                    role="tab"
-                    aria-selected="true"
-                >
-                    2D
-                </button>
-                <button 
-                    type="button" 
-                    class="toggle-btn" 
-                    id="btn-3d"
-                    role="tab"
-                    aria-selected="false"
-                >
-                    3D
-                </button>
+                <button type="button" class="toggle-btn" id="btn-1d" role="tab" aria-selected="false">1D</button>
+                <button type="button" class="toggle-btn active" id="btn-2d" role="tab" aria-selected="true">2D</button>
+                <button type="button" class="toggle-btn" id="btn-3d" role="tab" aria-selected="false">3D</button>
             </div>
 
             <!-- Selector de Color de Gráfica -->
             <div class="color-selector">
                 <span class="color-label">Color:</span>
-                <div 
-                    class="color-options" 
-                    id="color-options"
-                    role="radiogroup"
-                    aria-label="Selector de color"
-                >
+                <div class="color-options" id="color-options" role="radiogroup" aria-label="Selector de color">
                     <button type="button" class="color-btn active" style="background:#EF4444" data-color="0xEF4444" aria-label="Rojo"></button>
                     <button type="button" class="color-btn" style="background:#3B82F6" data-color="0x3B82F6" aria-label="Azul"></button>
                     <button type="button" class="color-btn" style="background:#10B981" data-color="0x10B981" aria-label="Verde"></button>
@@ -314,15 +209,7 @@
                     <span>Parámetro A</span>
                     <span id="val-a">1.0</span>
                 </div>
-                <input 
-                    type="range" 
-                    id="slider-a" 
-                    min="-5" 
-                    max="5" 
-                    step="0.1" 
-                    value="1"
-                    aria-label="Parámetro A"
-                >
+                <input type="range" id="slider-a" min="-5" max="5" step="0.1" value="1" aria-label="Parámetro A">
             </div>
 
             <div class="slider-group">
@@ -330,100 +217,91 @@
                     <span>Parámetro B</span>
                     <span id="val-b">1.0</span>
                 </div>
-                <input 
-                    type="range" 
-                    id="slider-b" 
-                    min="0.1" 
-                    max="10" 
-                    step="0.1" 
-                    value="1"
-                    aria-label="Parámetro B"
-                >
+                <input type="range" id="slider-b" min="0.1" max="10" step="0.1" value="1" aria-label="Parámetro B">
             </div>
         </div>
 
-        <!-- Teclado Numérico y de Funciones -->
-        <div class="keypad" id="keypad" role="group" aria-label="Teclado">
+        <!-- Teclado Científico y de Funciones -->
+        <div class="keypad" id="keypad" role="group" aria-label="Teclado Científico">
             
-            <!-- Fila 1: Funciones Trigonométricas y Logarítmicas -->
-            <button type="button" class="key func" data-insert="sin(">sin</button>
-            <button type="button" class="key func" data-insert="cos(">cos</button>
-            <button type="button" class="key func" data-insert="tan(">tan</button>
-            <button type="button" class="key func" data-insert="log(">log</button>
-            <button type="button" class="key func" data-insert="ln(">ln</button>
+            <!-- Fila 1: Modos y Memoria -->
+            <button type="button" class="key sci" data-action="toggle-2nd" aria-label="Segunda función">2nd</button>
+            <button type="button" class="key sci" data-action="toggle-angle" aria-label="Cambiar DEG RAD">RAD</button>
+            <button type="button" class="key sci" data-insert="MC(" aria-label="Limpiar memoria">MC</button>
+            <button type="button" class="key sci" data-insert="MR(" aria-label="Recuperar memoria">MR</button>
+            <button type="button" class="key sci" data-insert="M+(" aria-label="Sumar a memoria">M+</button>
+            <button type="button" class="key sci" data-insert="M-(" aria-label="Restar de memoria">M-</button>
 
-            <!-- Fila 2: Variables y Paréntesis -->
+            <!-- Fila 2: Potencias y Raíces -->
+            <button type="button" class="key sci" data-insert="x^2" aria-label="Al cuadrado">x²</button>
+            <button type="button" class="key sci" data-insert="x^3" aria-label="Al cubo">x³</button>
+            <button type="button" class="key sci" data-insert="x^" aria-label="Elevado a la y">xʸ</button>
+            <button type="button" class="key sci" data-insert="sqrt(" aria-label="Raíz cuadrada">√</button>
+            <button type="button" class="key sci" data-insert="cbrt(" aria-label="Raíz cúbica">∛</button>
+            <button type="button" class="key sci" data-insert="nthroot(" aria-label="Raíz n-ésima">ⁿ√</button>
+
+            <!-- Fila 3: Trigonometría Básica -->
+            <button type="button" class="key sci" data-insert="sin(" aria-label="Seno">sin</button>
+            <button type="button" class="key sci" data-insert="cos(" aria-label="Coseno">cos</button>
+            <button type="button" class="key sci" data-insert="tan(" aria-label="Tangente">tan</button>
+            <button type="button" class="key sci" data-insert="asin(" aria-label="Arco seno">sin⁻¹</button>
+            <button type="button" class="key sci" data-insert="acos(" aria-label="Arco coseno">cos⁻¹</button>
+            <button type="button" class="key sci" data-insert="atan(" aria-label="Arco tangente">tan⁻¹</button>
+
+            <!-- Fila 4: Logaritmos y Exponentes -->
+            <button type="button" class="key sci" data-insert="ln(" aria-label="Logaritmo natural">ln</button>
+            <button type="button" class="key sci" data-insert="log(" aria-label="Logaritmo base 10">log</button>
+            <button type="button" class="key sci" data-insert="e^(" aria-label="Exponencial e">eˣ</button>
+            <button type="button" class="key sci" data-insert="10^(" aria-label="Exponencial 10">10ˣ</button>
+            <button type="button" class="key sci" data-insert="exp(" aria-label="Exponencial">exp</button>
+            <button type="button" class="key sci" data-insert="abs(" aria-label="Valor absoluto">|x|</button>
+
+            <!-- Fila 5: Combinatoria, Factorial y Constantes -->
+            <button type="button" class="key sci" data-insert="!" aria-label="Factorial">n!</button>
+            <button type="button" class="key sci" data-insert="nPr(" aria-label="Permutación">nPr</button>
+            <button type="button" class="key sci" data-insert="nCr(" aria-label="Combinación">nCr</button>
+            <button type="button" class="key sci" data-insert="pi" aria-label="Pi">π</button>
+            <button type="button" class="key sci" data-insert="e" aria-label="Euler">e</button>
+            <button type="button" class="key sci" data-insert="phi" aria-label="Phi">φ</button>
+
+            <!-- Fila 6: Variables y Paréntesis -->
+            <button type="button" class="key func" data-insert="(">(</button>
+            <button type="button" class="key func" data-insert=")">)</button>
             <button type="button" class="key func" data-insert="x">x</button>
             <button type="button" class="key func" data-insert="y">y</button>
             <button type="button" class="key func" data-insert="z">z</button>
             <button type="button" class="key func" data-insert="t">t</button>
-            <button type="button" class="key func" data-insert="(">(</button>
 
-            <!-- Fila 3: Números y Operadores -->
-            <button type="button" class="key func" data-insert=")">)</button>
+            <!-- Fila 7: Números 7, 8, 9 y Operadores Básicos -->
             <button type="button" class="key" data-insert="7">7</button>
             <button type="button" class="key" data-insert="8">8</button>
             <button type="button" class="key" data-insert="9">9</button>
             <button type="button" class="key op" data-insert="/">÷</button>
+            <button type="button" class="key op" data-insert="*">×</button>
+            <button type="button" class="key clear" data-action="clear" style="grid-column: span 1;" title="Borrar todo">AC</button>
 
-            <!-- Fila 4 -->
-            <button type="button" class="key op" data-insert="^">xʸ</button>
+            <!-- Fila 8: Números 4, 5, 6 y Operadores Básicos -->
             <button type="button" class="key" data-insert="4">4</button>
             <button type="button" class="key" data-insert="5">5</button>
             <button type="button" class="key" data-insert="6">6</button>
-            <button type="button" class="key op" data-insert="*">×</button>
+            <button type="button" class="key op" data-insert="+">+</button>
+            <button type="button" class="key op" data-insert="-">-</button>
+            <button type="button" class="key func" data-action="backspace" style="grid-column: span 1;" title="Borrar último carácter">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.27 12l4.8-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"/></svg>
+            </button>
 
-            <!-- Fila 5 -->
-            <button type="button" class="key op" data-insert="sqrt(">√</button>
+            <!-- Fila 9: Números 1, 2, 3 e Igual -->
             <button type="button" class="key" data-insert="1">1</button>
             <button type="button" class="key" data-insert="2">2</button>
             <button type="button" class="key" data-insert="3">3</button>
-            <button type="button" class="key op" data-insert="+">+</button>
-
-            <!-- Fila 6 -->
-            <button type="button" class="key op" data-insert="-">-</button>
-            <button type="button" class="key" data-insert="0">0</button>
-            <button type="button" class="key" data-insert=".">.</button>
-            <button type="button" class="key op" data-insert="pi">π</button>
             <button type="button" class="key op" data-insert="=">=</button>
+            <button type="button" class="key enter" data-action="calculate" style="grid-column: span 2;" title="Compilar y fijar gráfica">ENTER</button>
 
-            <!-- Fila 7: Acciones Especiales (Limpiar, Borrar, Enter, Siguiente) -->
-            <button 
-                type="button" 
-                class="key clear" 
-                data-action="clear" 
-                style="grid-column: span 1;"
-                title="Borrar todo"
-            >
-                AC
-            </button>
-            <button 
-                type="button" 
-                class="key func" 
-                data-action="backspace" 
-                style="grid-column: span 1;"
-                title="Borrar último carácter"
-            >
-                DEL
-            </button>
-            <button 
-                type="button" 
-                class="key enter" 
-                data-action="calculate" 
-                style="grid-column: span 2;"
-                title="Compilar y fijar gráfica"
-            >
-                ENTER
-            </button>
-            <button 
-                type="button" 
-                class="key op" 
-                data-action="next" 
-                style="grid-column: span 1; background: #10B981; color: white;"
-                title="Fijar y pasar a la siguiente gráfica"
-            >
-                SGT
-            </button>
+            <!-- Fila 10: Cero, Punto, Siguiente -->
+            <button type="button" class="key" data-insert="0" style="grid-column: span 2;">0</button>
+            <button type="button" class="key" data-insert=".">.</button>
+            <button type="button" class="key sci" data-insert="ans" aria-label="Última respuesta">Ans</button>
+            <button type="button" class="key op" data-action="next" style="grid-column: span 2; background: #10B981; color: white;" title="Fijar y pasar a la siguiente gráfica">SGT</button>
         </div>
     </div>
 
@@ -432,44 +310,49 @@
          ========================================= -->
     <div id="help-modal" class="modal-overlay" aria-hidden="true">
         <div class="modal-content" role="dialog" aria-labelledby="modal-title" aria-modal="true">
-            <button type="button" id="close-help-btn" class="close-modal-btn" aria-label="Cerrar ayuda">✖</button>
-            <h2 id="modal-title">Manual de Uso Rápido</h2>
+            <button type="button" id="close-help-btn" class="close-modal-btn" aria-label="Cerrar ayuda">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+            <h2 id="modal-title">Manual de Uso Científico</h2>
             <div class="modal-body">
                 <h3>1. Autenticación</h3>
-                <p>Para acceder al sistema, es obligatorio utilizar un correo institucional que termine exactamente en <code>@juventud.edu.mx</code>. Cualquier otro dominio será rechazado.</p>
+                <p>Para acceder, use un correo que termine exactamente en <code>@juventud.edu.mx</code>.</p>
                 
                 <h3>2. Modos de Visualización</h3>
                 <ul>
-                    <li><strong>1D:</strong> Recta numérica. Evalúa la expresión como un valor constante (ej. <code>5 * a</code>).</li>
-                    <li><strong>2D:</strong> Plano cartesiano. La variable dependiente es <code>y</code> (ej. <code>sin(x)</code>).</li>
-                    <li><strong>3D:</strong> Superficie espacial. Las variables dependientes son <code>z</code> (ej. <code>x^2 + y^2</code>).</li>
+                    <li><strong>1D:</strong> Recta numérica para evaluar constantes (ej. <code>5 * a</code>).</li>
+                    <li><strong>2D:</strong> Plano cartesiano (variables <code>x</code>, <code>y</code>).</li>
+                    <li><strong>3D:</strong> Superficie espacial (variables <code>x</code>, <code>y</code>, <code>z</code>).</li>
                 </ul>
 
-                <h3>3. Múltiples Gráficas</h3>
-                <p>Puedes graficar hasta 10 funciones simultáneamente.</p>
+                <h3>3. Funciones Científicas</h3>
+                <p>Use el botón <code>2nd</code> para alternar entre funciones trigonométricas directas e inversas (hiperbólicas prontamente). El botón <code>RAD</code> alterna entre radianes y grados sexagesimales (DEG).</p>
                 <ul>
-                    <li>Usa el menú desplegable <strong>Gráfica N</strong> para seleccionar qué función estás editando.</li>
-                    <li>Presiona <strong>SGT</strong> para fijar la gráfica actual y pasar automáticamente a la siguiente.</li>
-                    <li>Presiona <strong>ENTER</strong> para compilar la gráfica actual sin cambiar de espacio.</li>
-                    <li>Usa el botón <strong>Borrar</strong> para limpiar la gráfica seleccionada.</li>
+                    <li><strong>Memoria:</strong> <code>MC</code> (Limpiar), <code>MR</code> (Recuperar), <code>M+</code> (Sumar), <code>M-</code> (Restar).</li>
+                    <li><strong>Combinatoria:</strong> <code>nPr(n, r)</code> para permutaciones, <code>nCr(n, r)</code> para combinaciones.</li>
+                    <li><strong>Factorial:</strong> Use <code>!</code> después de un número (ej. <code>5!</code>).</li>
                 </ul>
 
-                <h3>4. Sintaxis y Operadores</h3>
-                <p>El motor soporta multiplicación implícita (ej. <code>2x</code> se convierte en <code>2*x</code>).</p>
+                <h3>4. Múltiples Gráficas</h3>
+                <p>Puedes graficar hasta 10 funciones simultáneamente. Cada una puede tener un color distinto.</p>
                 <ul>
-                    <li><strong>Ecuaciones Implícitas:</strong> Puedes usar el signo <code>=</code>. Por ejemplo: <code>x^2 + y^2 = 9</code> dibujará un círculo.</li>
-                    <li><strong>Operadores:</strong> <code>+</code> (Suma), <code>-</code> (Resta), <code>*</code> (Multiplicación), <code>/</code> (División), <code>^</code> (Potencia).</li>
-                    <li><strong>Funciones:</strong> <code>sin()</code>, <code>cos()</code>, <code>tan()</code>, <code>log()</code> (Base 10), <code>ln()</code> (Natural), <code>sqrt()</code> (Raíz).</li>
-                    <li><strong>Constantes:</strong> <code>pi</code> (3.1416...), <code>e</code> (2.7182...).</li>
+                    <li>Presiona <strong>ENTER</strong> para compilar la ecuación actual.</li>
+                    <li>Presiona <strong>SGT</strong> para fijar la gráfica y editar la siguiente automáticamente.</li>
+                    <li>Use el menú desplegable para cambiar entre los 10 espacios de gráficas.</li>
                 </ul>
 
-                <h3>5. Animación y Parámetros</h3>
-                <p>Incluye la variable <code>t</code> en tu expresión y presiona el botón <strong>▶️</strong> para iniciar la animación temporal. Los deslizadores <strong>A</strong> y <strong>B</strong> modifican los parámetros dinámicos en tiempo real.</p>
+                <h3>5. Sintaxis Avanzada</h3>
+                <p>El motor soporta multiplicación implícita (<code>2x</code> = <code>2*x</code>).</p>
+                <ul>
+                    <li><strong>Ecuaciones Implícitas:</strong> <code>x^2 + y^2 = 9</code> (Dibuja un círculo).</li>
+                    <li><strong>Constantes:</strong> <code>pi</code> (π), <code>e</code>, <code>phi</code> (Proporción áurea).</li>
+                    <li><strong>Animación:</strong> Incluya la variable <code>t</code> y presione ▶️.</li>
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- Carga del script principal como módulo para evitar bloqueos -->
+    <!-- Script principal -->
     <script src="script.js"></script>
 </body>
 </html>
