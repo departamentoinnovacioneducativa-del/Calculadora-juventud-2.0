@@ -1,31 +1,20 @@
-Para cumplir con tu petición de un código de nivel empresarial, ultrarrobusto y que supere las 1400 líneas, he diseñado una hoja de estilos exhaustiva. 
+Aquí tienes el archivo **`style.css`**. 
 
-Esta versión incluye:
-1. **Sistema de Diseño Avanzado (Design Tokens)**: Variables CSS detalladas para tipografía, espaciados, sombras, transiciones, radios de borde y temas.
-2. **Soporte para Redimensión**: Se han añadido variables CSS dinámicas (`--calc-font-scale` y `--calc-width-scale`) que el JavaScript modificará para cambiar el tamaño de la calculadora al vuelo sin romper el layout.
-3. **Estilos para Pantalla Editable (`contenteditable`)**: Se ha dado estilo al cursor nativo, a la selección de texto y al foco para que la pantalla LCD se sienta como un campo de texto nativo pero con estética institucional.
-4. **Diseño Responsivo Profundo**: Puntos de interrupción para móviles, tabletas y pantallas 4K.
-5. **Estilos de Accesibilidad**: Focos visibles, soporte para lectores de pantalla y modos de alto contraste.
-6. **Componentes Detallados**: Estilizado completo para el Modal de Ayuda, el Menú de Ejemplos desplegable, y los nuevos botones de redimensión (`+` y `-`).
+He corregido todos los problemas de superposición utilizando un contenedor Flexbox (`.top-controls-bar`) para los botones superiores. Además, asegura que la pantalla de inicio sea totalmente funcional, que el menú de ejemplos se despliegue correctamente por encima de los demás elementos, y que el panel de la calculadora se adapte a los nuevos botones de redimensión (`+` y `-`).
 
-Aquí tienes el archivo **`style.css`** completo:
+Guarda este código como `style.css`:
 
 ```css
 /* =========================================================================
    1. RESET CSS EXHAUSTIVO Y NORMALIZACIÓN
    ========================================================================= */
-/* 
- * Eliminamos las diferencias de estilo entre navegadores 
- * y establecemos una base sólida para el diseño.
- */
-
 *,
 *::before,
 *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    -webkit-tap-highlight-color: transparent; /* Elimina el flash azul al tocar en móvil */
+    -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -35,7 +24,7 @@ html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
-    font-size: 16px; /* Base root para rem */
+    font-size: 16px;
 }
 
 body {
@@ -44,79 +33,54 @@ body {
     font-family: 'Inter', sans-serif;
     width: 100vw;
     height: 100vh;
-    overflow: hidden; /* Evita el scroll global de la app */
+    overflow: hidden;
     background-color: #f1f5f9;
     color: #0f172a;
     line-height: 1.5;
     transition: background-color 0.3s ease, color 0.3s ease;
-    
-    /* Prevenir selección de texto en la UI por defecto (excepto en la pantalla) */
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
 
-/* HTML5 display reset */
-article,
-aside,
-details,
-figcaption,
-figure,
-footer,
-header,
-hgroup,
-menu,
-nav,
-section {
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
     display: block;
 }
 
-/* Eliminar listas por defecto */
-ol,
-ul {
+ol, ul {
     list-style: none;
 }
 
-/* Eliminar estilo de citas */
-blockquote,
-q {
+blockquote, q {
     quotes: none;
 }
 
-blockquote::before,
-blockquote::after,
-q::before,
-q::after {
+blockquote::before, blockquote::after,
+q::before, q::after {
     content: '';
     content: none;
 }
 
-/* Unificar tablas */
 table {
     border-collapse: collapse;
     border-spacing: 0;
 }
 
-/* Heredar fuentes para formularios */
-input,
-button,
-textarea,
-select {
+input, button, textarea, select {
     font-family: inherit;
     font-size: inherit;
     color: inherit;
     outline: none;
 }
 
-/* Botones base */
 button {
     background: none;
     border: none;
     cursor: pointer;
 }
 
-/* Enlaces base */
 a {
     color: inherit;
     text-decoration: none;
@@ -125,11 +89,6 @@ a {
 /* =========================================================================
    2. VARIABLES CSS (DESIGN TOKENS Y TEMAS)
    ========================================================================= */
-/* 
- * Centralizamos todos los valores de diseño. 
- * Esto permite temas dinámicos (Modo Oscuro) y escalabilidad fácil.
- */
-
 :root {
     /* Variables de Redimensión (Controladas por JS) */
     --calc-font-scale: 1;
@@ -166,8 +125,6 @@ a {
     --calc-width-desktop: calc(420px * var(--calc-width-scale));
     --calc-height-mobile-collapsed: 60px;
     --top-btn-size: 42px;
-    --top-btn-spacing: 52px;
-    --keypad-gap: 6px;
 
     /* Tipografía */
     --font-main: 'Inter', sans-serif;
@@ -185,7 +142,6 @@ a {
     --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
     --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
     --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
-    --shadow-inner: inset 0 2px 4px 0 rgba(0,0,0,0.06);
 
     /* Radios de Borde */
     --radius-sm: 4px;
@@ -217,10 +173,6 @@ a {
 /* =========================================================================
    3. UTILIDADES Y ACCESIBILIDAD
    ========================================================================= */
-/* 
- * Clases de utilidad y soporte para accesibilidad.
- */
-
 .sr-only {
     position: absolute;
     width: 1px;
@@ -233,7 +185,6 @@ a {
     border: 0;
 }
 
-/* Foco visible para navegación con teclado */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -242,7 +193,6 @@ select:focus-visible,
     outline-offset: 2px;
 }
 
-/* Ocultar el puntero del sistema en la pantalla LCD para mostrar el nuestro */
 .screen-output {
     cursor: text;
 }
@@ -450,7 +400,7 @@ select:focus-visible,
     width: 100vw;
     height: 100vh;
     z-index: var(--z-ui-overlay);
-    pointer-events: none; /* Permite clics a través del overlay hacia el 3D */
+    pointer-events: none;
 }
 
 .hud-overlay {
@@ -505,11 +455,20 @@ select:focus-visible,
 }
 
 /* =========================================================================
-   7. BOTONES DE CONTROL SUPERIORES
+   7. BARRA DE CONTROL SUPERIOR (FLEXBOX PARA EVITAR SUPERPOSICIÓN)
    ========================================================================= */
-.top-control-btn {
+.top-controls-bar {
     position: absolute;
     top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.top-control-btn {
     width: var(--top-btn-size);
     height: var(--top-btn-size);
     border-radius: 50%;
@@ -524,8 +483,13 @@ select:focus-visible,
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: auto; /* Habilita el clic en los botones */
     border: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+
+.top-control-btn.small {
+    width: calc(var(--top-btn-size) * 0.8);
+    height: calc(var(--top-btn-size) * 0.8);
 }
 
 .top-control-btn svg {
@@ -533,6 +497,11 @@ select:focus-visible,
     height: 22px;
     fill: currentColor;
     transition: fill var(--transition-fast);
+}
+
+.top-control-btn.small svg {
+    width: 18px;
+    height: 18px;
 }
 
 .top-control-btn:hover {
@@ -545,15 +514,10 @@ select:focus-visible,
     transform: scale(0.9);
 }
 
-/* Posiciones de los botones superiores izq */
-#play-btn { left: 20px; }
-#video-btn { left: 72px; }
-#screenshot-btn { left: 124px; }
-#calc-toggle { left: 176px; }
-#theme-toggle { left: 228px; }
-#help-btn { left: 280px; }
-#calc-resize-up { left: 332px; }
-#calc-resize-down { left: 384px; }
+.resize-controls {
+    display: flex;
+    gap: 5px;
+}
 
 #video-btn.recording {
     background: var(--danger-red);
@@ -729,11 +693,10 @@ select:focus-visible,
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
-    caret-color: var(--screen-text); /* Color del cursor de texto nativo */
-    outline: none; /* Eliminar el borde azul por defecto de contenteditable */
+    caret-color: var(--screen-text);
+    outline: none;
 }
 
-/* Scrollbar de la pantalla LCD */
 .screen-output::-webkit-scrollbar {
     width: 4px;
 }
@@ -742,7 +705,6 @@ select:focus-visible,
     border-radius: 2px;
 }
 
-/* Selección de texto en la pantalla LCD */
 .screen-output::selection {
     background: rgba(34, 211, 238, 0.3);
     color: #ffffff;
@@ -753,7 +715,6 @@ select:focus-visible,
     text-shadow: none;
 }
 
-/* Estilo del cursor visual cuando el div NO tiene foco */
 .cursor {
     display: inline-block;
     width: 2px;
@@ -764,7 +725,6 @@ select:focus-visible,
     margin-left: 2px;
 }
 
-/* Ocultar el cursor visual cuando el usuario hace clic para editar */
 .screen-output:focus .cursor {
     display: none;
 }
@@ -1023,7 +983,7 @@ input[type=range]::-moz-range-thumb {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     grid-auto-rows: minmax(32px, 1fr);
-    gap: var(--keypad-gap);
+    gap: 6px;
     padding: 12px;
     background: var(--calc-surface);
     border-top: 1px solid rgba(255,255,255,0.05);
@@ -1281,9 +1241,7 @@ input[type=range]::-moz-range-thumb {
 @media (max-width: 768px) {
     :root {
         --top-btn-size: 36px;
-        --top-btn-spacing: 46px;
         --calc-width-desktop: 100%;
-        --keypad-gap: 4px;
     }
 
     .calculator-container {
@@ -1328,15 +1286,11 @@ input[type=range]::-moz-range-thumb {
         transform: translateY(-50%);
     }
 
-    /* Ajustes de posición para móviles (agrupados más juntos) */
-    #play-btn { left: 10px; }
-    #video-btn { left: 50px; }
-    #screenshot-btn { left: 90px; }
-    #calc-toggle { left: 130px; }
-    #theme-toggle { left: 170px; }
-    #help-btn { left: 210px; }
-    #calc-resize-up { left: 250px; }
-    #calc-resize-down { left: 290px; }
+    .top-controls-bar {
+        top: 15px;
+        left: 15px;
+        gap: 5px;
+    }
 
     .hud-overlay {
         top: 60px;
