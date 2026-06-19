@@ -15,11 +15,13 @@ const AppState = {
     hasStarted: false
 };
 
+// Definición de temas para el lienzo
 const themes = {
     light: { bg: 0xf8fafc, paper: 0xffffff, grid: 0xe2e8f0, axes: 0x0f172a, grid3D_center: 0x94a3b8, grid3D_base: 0xe2e8f0 },
     dark: { bg: 0x0a0f1d, paper: 0x1e293b, grid: 0x334155, axes: 0x94a3b8, grid3D_center: 0x475569, grid3D_base: 0x334155 }
 };
 
+// Referencias DOM
 const els = {
     splash: document.getElementById('splash-screen'),
     startBtn: document.getElementById('start-btn'),
@@ -55,6 +57,7 @@ function attemptLogin() {
     if (AppState.hasStarted) return;
     const email = els.emailInput.value.trim().toLowerCase();
     
+    // Validación estricta: debe terminar exactamente en @juventud.edu.mx
     if (email.endsWith('@juventud.edu.mx')) {
         AppState.hasStarted = true;
         els.errorMsg.style.display = 'none';
@@ -87,6 +90,7 @@ const examples = [
     { name: "10. Valor Fijo 1D", expr: "b * 3", mode: "1D" }
 ];
 
+// Variables globales de Three.js
 let scene, camera, renderer, controls, raycaster;
 let group3D, geometry3D, material3D, mesh3D, gridHelper3D, axesHelper3D;
 let group2D, paperPlane, grid2DMat, axisMat, curve2DGeo, curve2DMat, curve2D;
@@ -143,8 +147,11 @@ function setupThreeJS() {
     scene.background = new THREE.Color(themes.light.bg);
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 10); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
+    camera.position.set(0, 0, 10); 
+    camera.up.set(0, 1, 0); 
+    camera.lookAt(0, 0, 0);
 
+    // preserveDrawingBuffer: true ES NECESARIO PARA CAPTURAS Y VIDEO
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -153,7 +160,8 @@ function setupThreeJS() {
     container.appendChild(renderer.domElement);
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; controls.dampingFactor = 0.05;
+    controls.enableDamping = true; 
+    controls.dampingFactor = 0.05;
 
     raycaster = new THREE.Raycaster();
     raycaster.params.Line.threshold = 0.2;
@@ -221,7 +229,7 @@ function setupScenes() {
     group1D.add(pointer1DMesh);
     group1D.visible = false;
 
-    // Puntero genérico
+    // Puntero genérico para el ratón
     mouse = new THREE.Vector2();
     pointerMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
     scene.add(pointerMesh);
@@ -322,16 +330,19 @@ function setupEvents() {
     els.btn2D.addEventListener('click', () => setMode('2D'));
     els.btn3D.addEventListener('click', () => setMode('3D'));
 
+    // Botón Ocultar/Mostrar Calculadora
     els.calcToggleBtn.addEventListener('click', () => {
         const isHidden = els.calc.classList.toggle('hidden-calc');
         els.calcToggleBtn.innerText = isHidden ? "👁️" : "🧮";
     });
 
+    // Botón Animación Play/Pause
     els.playBtn.addEventListener('click', () => {
         AppState.isPlaying = !AppState.isPlaying;
         els.playBtn.innerText = AppState.isPlaying ? "⏸️" : "▶️";
     });
 
+    // Botón Captura de Pantalla
     els.screenshotBtn.addEventListener('click', () => {
         renderer.render(scene, camera);
         try {
@@ -350,6 +361,7 @@ function setupEvents() {
         }
     });
 
+    // Botón Grabar Video
     els.videoBtn.addEventListener('click', () => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
@@ -384,6 +396,7 @@ function setupEvents() {
         }
     });
 
+    // Botón Tema (Modo Oscuro/Claro)
     els.themeBtn.addEventListener('click', () => {
         AppState.isDarkMode = !AppState.isDarkMode;
         document.documentElement.classList.toggle('dark-mode', AppState.isDarkMode);
@@ -400,6 +413,7 @@ function setupEvents() {
         group3D.add(gridHelper3D);
     });
 
+    // Interacción con el gráfico (Tooltip)
     window.addEventListener('mousemove', (e) => handlePointer(e.clientX, e.clientY));
     window.addEventListener('touchmove', (e) => {
         if(e.touches.length > 0 && !e.touches[0].target.closest('.calculator-container')) {
@@ -407,6 +421,7 @@ function setupEvents() {
         }
     }, {passive: true});
 
+    // Resize global
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -416,6 +431,9 @@ function setupEvents() {
     });
 }
 
+// =========================================
+// FUNCIONES DEL TECLADO Y PANTALLA
+// =========================================
 function insertText(char) { AppState.expression += char; updateDisplay(); updateGraphics(AppState.time); }
 function clearDisplay() { AppState.expression = ""; updateDisplay(); updateGraphics(AppState.time); }
 function backspace() { AppState.expression = AppState.expression.slice(0, -1); updateDisplay(); updateGraphics(AppState.time); }
@@ -439,6 +457,9 @@ function updateDisplay() {
     }
 }
 
+// =========================================
+// LÓGICA DE MODO (1D, 2D, 3D)
+// =========================================
 function setMode(mode) {
     if (AppState.isAnimating && AppState.mode === mode) return;
     AppState.mode = mode; AppState.isAnimating = true;
@@ -476,6 +497,9 @@ function setMode(mode) {
     animateCamera();
 }
 
+// =========================================
+// INTERACCIÓN CON EL GRÁFICO
+// =========================================
 function handlePointer(clientX, clientY) {
     const rect = renderer.domElement.getBoundingClientRect();
     if (clientX > rect.right || clientX < rect.left || clientY > rect.bottom || clientY < rect.top) return;
@@ -503,10 +527,14 @@ function handlePointer(clientX, clientY) {
     }
 }
 
+// =========================================
+// LOOP PRINCIPAL DE ANIMACIÓN
+// =========================================
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
     
+    // Lógica de animación Play
     if (AppState.isPlaying) {
         AppState.time += 0.05;
         if (AppState.time > Math.PI * 2) AppState.time = 0; 
@@ -514,4 +542,4 @@ function animate() {
     }
     
     renderer.render(scene, camera);
-} 
+}
