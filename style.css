@@ -1,10 +1,3 @@
-Aquí tienes el archivo **`style.css`**. 
-
-He corregido todos los problemas de superposición utilizando un contenedor Flexbox (`.top-controls-bar`) para los botones superiores. Además, asegura que la pantalla de inicio sea totalmente funcional, que el menú de ejemplos se despliegue correctamente por encima de los demás elementos, y que el panel de la calculadora se adapte a los nuevos botones de redimensión (`+` y `-`).
-
-Guarda este código como `style.css`:
-
-```css
 /* =========================================================================
    1. RESET CSS EXHAUSTIVO Y NORMALIZACIÓN
    ========================================================================= */
@@ -1444,4 +1437,4 @@ input[type=range]::-moz-range-thumb {
         height: auto;
     }
 }
-```
+
