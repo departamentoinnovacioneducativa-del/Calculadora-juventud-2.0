@@ -7,16 +7,21 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Calculadora Científica y Graficadora 2D/3D Institucional. Soporte para funciones hiperbólicas, trigonométricas, matrices y múltiples gráficas.">
+    
+    <!-- Metadatos para SEO e Institucionalidad -->
+    <meta name="description" content="Calculadora Científica y Graficadora 2D/3D Institucional de alto rendimiento. Soporte para cálculo diferencial, estadística, trigonometría avanzada y renderizado 3D en tiempo real.">
+    <meta name="keywords" content="calculadora científica, graficadora 3d, matemáticas, juventud, institucional, calculus, trigonometría">
     <meta name="author" content="Graph Engine Pro Institucional">
     <meta name="theme-color" content="#0f172a">
+    <meta name="robots" content="index, follow">
     
-    <!-- Open Graph / Social Media Meta Tags -->
+    <!-- Open Graph para Redes Sociales -->
     <meta property="og:title" content="Calculadora Científica Gráfica Institucional">
-    <meta property="og:description" content="Motor gráfico avanzado 2D/3D con análisis matemático completo.">
+    <meta property="og:description" content="Motor gráfico avanzado 2D/3D con análisis matemático completo para @juventud.edu.mx">
     <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_ES">
     
-    <!-- Precarga de imagen institucional -->
+    <!-- Precarga de imagen institucional para carga instantánea -->
     <link rel="preload" as="image" href="Calculadora.jpg">
     
     <!-- Fuentes tipográficas de Google Fonts -->
@@ -30,7 +35,9 @@
     <!-- =========================================
          BIBLIOTECAS EXTERNAS (THREE.JS)
          ========================================= -->
+    <!-- Three.js núcleo (versión estable r128) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls para manipulación de cámara 3D -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <title>Calculadora Científica Gráfica Institucional</title>
@@ -42,11 +49,14 @@
          ========================================= -->
     <div id="splash-screen" role="dialog" aria-labelledby="login-title" aria-modal="true">
         <div class="splash-content">
-            <img 
-                src="Calculadora.jpg" 
-                alt="Logotipo Institucional de la Calculadora" 
-                class="splash-img"
-            >
+            <div class="splash-logo-container">
+                <img 
+                    src="Calculadora.jpg" 
+                    alt="Logotipo Institucional de la Calculadora" 
+                    class="splash-img"
+                >
+                <div class="splash-loading-bar"><div class="splash-loading-progress"></div></div>
+            </div>
             
             <form id="login-form" class="login-box" autocomplete="off" onsubmit="return false;">
                 <h2 id="login-title">Acceso Institucional</h2>
@@ -117,7 +127,7 @@
         </button>
         
         <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar u Ocultar Calculadora" title="Mostrar/Ocultar panel">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm-7 16H5v-3h7v3zm0-4H5v-3h7v3zm0-4H5V8h7v3zm7 8h-5V8h5v11z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H4V8h16v10zm-8-2c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
         </button>
         
         <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema claro u oscuro" title="Cambiar tema">
@@ -126,6 +136,11 @@
 
         <button type="button" id="help-btn" class="top-control-btn" aria-label="Ayuda e instrucciones" title="Manual de uso">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+        </button>
+
+        <!-- Botón de Configuración (Grid, Ejes, etc.) -->
+        <button type="button" id="settings-btn" class="top-control-btn" aria-label="Configuración de Vista" title="Configuración de Vista">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
         </button>
 
         <!-- Tooltip de Coordenadas -->
@@ -151,13 +166,26 @@
             <span class="header-title">SCIENTIFIC GRAPH ENGINE</span>
         </div>
 
-        <!-- Pantalla LCD de Expresión -->
+        <!-- Pantalla LCD de Expresión (Editable para pegar) -->
         <div class="screen-container">
             <div class="screen-top-row">
                 <div class="screen-label" id="screen-label" aria-label="Etiqueta de función actual">f1(x, y, t) =</div>
                 <div class="memory-indicator" id="memory-indicator" aria-live="polite">M</div>
             </div>
-            <div class="screen-output" id="display" role="textbox" aria-live="polite" aria-readonly="true">
+            
+            <!-- 
+                contenteditable="true" permite al usuario hacer clic aquí, 
+                escribir con su teclado físico o usar Ctrl+V para pegar fórmulas. 
+            -->
+            <div 
+                class="screen-output" 
+                id="display" 
+                role="textbox" 
+                aria-live="polite" 
+                contenteditable="true" 
+                spellcheck="false"
+                aria-label="Pantalla de expresión matemática, puedes escribir o pegar aquí"
+            >
                 <span class="cursor"></span>
             </div>
         </div>
@@ -168,7 +196,7 @@
             <!-- Menú Desplegable de Ejemplos -->
             <div class="dropdown-container">
                 <button type="button" id="examples-btn" class="examples-btn" aria-haspopup="true" aria-expanded="false">
-                    Ejemplos Rápidos ⌄
+                    Ejemplos Rápidos (Incluye Esfera) ⌄
                 </button>
                 <div id="examples-dropdown" class="examples-dropdown" role="menu"></div>
             </div>
@@ -240,21 +268,21 @@
             <button type="button" class="key sci" data-insert="cbrt(" aria-label="Raíz cúbica">∛</button>
             <button type="button" class="key sci" data-insert="nthroot(" aria-label="Raíz n-ésima">ⁿ√</button>
 
-            <!-- Fila 3: Trigonometría Básica -->
+            <!-- Fila 3: Exponentes y Notación Científica (NUEVOS) -->
+            <button type="button" class="key sci" data-insert="e^(" aria-label="Exponencial natural e elevado a x">eˣ</button>
+            <button type="button" class="key sci" data-insert="10^(" aria-label="10 elevado a la x">10ˣ</button>
+            <button type="button" class="key sci" data-insert="*10^" aria-label="Notación científica exponente">EXP</button>
+            <button type="button" class="key sci" data-insert="ln(" aria-label="Logaritmo natural">ln</button>
+            <button type="button" class="key sci" data-insert="log(" aria-label="Logaritmo base 10">log</button>
+            <button type="button" class="key sci" data-insert="exp(" aria-label="Exponencial">exp</button>
+
+            <!-- Fila 4: Trigonometría Básica -->
             <button type="button" class="key sci" data-insert="sin(" aria-label="Seno">sin</button>
             <button type="button" class="key sci" data-insert="cos(" aria-label="Coseno">cos</button>
             <button type="button" class="key sci" data-insert="tan(" aria-label="Tangente">tan</button>
             <button type="button" class="key sci" data-insert="asin(" aria-label="Arco seno">sin⁻¹</button>
             <button type="button" class="key sci" data-insert="acos(" aria-label="Arco coseno">cos⁻¹</button>
             <button type="button" class="key sci" data-insert="atan(" aria-label="Arco tangente">tan⁻¹</button>
-
-            <!-- Fila 4: Logaritmos y Exponentes -->
-            <button type="button" class="key sci" data-insert="ln(" aria-label="Logaritmo natural">ln</button>
-            <button type="button" class="key sci" data-insert="log(" aria-label="Logaritmo base 10">log</button>
-            <button type="button" class="key sci" data-insert="e^(" aria-label="Exponencial e">eˣ</button>
-            <button type="button" class="key sci" data-insert="10^(" aria-label="Exponencial 10">10ˣ</button>
-            <button type="button" class="key sci" data-insert="exp(" aria-label="Exponencial">exp</button>
-            <button type="button" class="key sci" data-insert="abs(" aria-label="Valor absoluto">|x|</button>
 
             <!-- Fila 5: Combinatoria, Factorial y Constantes -->
             <button type="button" class="key sci" data-insert="!" aria-label="Factorial">n!</button>
@@ -318,22 +346,26 @@
                 <h3>1. Autenticación</h3>
                 <p>Para acceder, use un correo que termine exactamente en <code>@juventud.edu.mx</code>.</p>
                 
-                <h3>2. Modos de Visualización</h3>
+                <h3>2. Ingreso de Fórmulas (Pegado Directo)</h3>
+                <p>La pantalla LCD de la calculadora es interactiva. Puede hacer clic directamente en ella y escribir desde su teclado físico, o usar <code>Ctrl+V</code> (Pegar) para insertar fórmulas complejas copiadas de otras fuentes.</p>
+                
+                <h3>3. Modos de Visualización</h3>
                 <ul>
                     <li><strong>1D:</strong> Recta numérica para evaluar constantes (ej. <code>5 * a</code>).</li>
                     <li><strong>2D:</strong> Plano cartesiano (variables <code>x</code>, <code>y</code>).</li>
-                    <li><strong>3D:</strong> Superficie espacial (variables <code>x</code>, <code>y</code>, <code>z</code>).</li>
+                    <li><strong>3D:</strong> Superficie espacial (variables <code>x</code>, <code>y</code>, <code>z</code>). Incluye ejemplos como la Esfera.</li>
                 </ul>
 
-                <h3>3. Funciones Científicas</h3>
-                <p>Use el botón <code>2nd</code> para alternar entre funciones trigonométricas directas e inversas (hiperbólicas prontamente). El botón <code>RAD</code> alterna entre radianes y grados sexagesimales (DEG).</p>
+                <h3>4. Funciones Científicas y Exponentes</h3>
+                <p>Use el botón <code>2nd</code> para alternar entre funciones trigonométricas directas e inversas. El botón <code>RAD</code> alterna entre radianes y grados (DEG).</p>
                 <ul>
+                    <li><strong>Exponentes:</strong> Use <code>eˣ</code> para exponencial natural, <code>10ˣ</code> para base 10, y <code>EXP</code> para notación científica (<code>*10^n</code>).</li>
                     <li><strong>Memoria:</strong> <code>MC</code> (Limpiar), <code>MR</code> (Recuperar), <code>M+</code> (Sumar), <code>M-</code> (Restar).</li>
                     <li><strong>Combinatoria:</strong> <code>nPr(n, r)</code> para permutaciones, <code>nCr(n, r)</code> para combinaciones.</li>
                     <li><strong>Factorial:</strong> Use <code>!</code> después de un número (ej. <code>5!</code>).</li>
                 </ul>
 
-                <h3>4. Múltiples Gráficas</h3>
+                <h3>5. Múltiples Gráficas</h3>
                 <p>Puedes graficar hasta 10 funciones simultáneamente. Cada una puede tener un color distinto.</p>
                 <ul>
                     <li>Presiona <strong>ENTER</strong> para compilar la ecuación actual.</li>
@@ -341,13 +373,48 @@
                     <li>Use el menú desplegable para cambiar entre los 10 espacios de gráficas.</li>
                 </ul>
 
-                <h3>5. Sintaxis Avanzada</h3>
+                <h3>6. Sintaxis Avanzada</h3>
                 <p>El motor soporta multiplicación implícita (<code>2x</code> = <code>2*x</code>).</p>
                 <ul>
                     <li><strong>Ecuaciones Implícitas:</strong> <code>x^2 + y^2 = 9</code> (Dibuja un círculo).</li>
+                    <li><strong>Esfera 3D:</strong> <code>x^2 + y^2 + z^2 = b^2</code> (Ajuste el radio con el parámetro B).</li>
                     <li><strong>Constantes:</strong> <code>pi</code> (π), <code>e</code>, <code>phi</code> (Proporción áurea).</li>
                     <li><strong>Animación:</strong> Incluya la variable <code>t</code> y presione ▶️.</li>
                 </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         MODAL DE CONFIGURACIÓN DE VISTA
+         ========================================= -->
+    <div id="settings-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+            <button type="button" id="close-settings-btn" class="close-modal-btn" aria-label="Cerrar configuración">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+            <h2 id="settings-title">Configuración de Vista</h2>
+            <div class="modal-body">
+                <div class="settings-group">
+                    <label class="settings-label">
+                        <input type="checkbox" id="toggle-grid" checked> Mostrar Cuadrícula
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">
+                        <input type="checkbox" id="toggle-axes" checked> Mostrar Ejes
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">
+                        Calidad de Renderizado:
+                        <select id="render-quality">
+                            <option value="high">Alta (100x100)</option>
+                            <option value="medium">Media (60x60)</option>
+                            <option value="low">Baja (30x30)</option>
+                        </select>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
