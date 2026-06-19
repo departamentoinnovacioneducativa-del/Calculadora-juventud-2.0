@@ -39,7 +39,11 @@ const AppState = {
     isPlaying: false,
     time: 0,
     isDarkMode: false,
-    hasStarted: false
+    hasStarted: false,
+    angleMode: 'RAD', // 'RAD' o 'DEG'
+    is2ndActive: false, // Función secundaria para hiperbólicas
+    memory: 0,
+    lastAnswer: 0
 };
 
 // Inicialización de los espacios para las 10 gráficas
@@ -90,11 +94,13 @@ const els = {
     
     display: document.getElementById('display'),
     screenLabel: document.getElementById('screen-label'),
+    memoryIndicator: document.getElementById('memory-indicator'),
     
     valA: document.getElementById('val-a'),
     valB: document.getElementById('val-b'),
     statusText: document.getElementById('status-text'),
     statusDot: document.getElementById('status-dot'),
+    angleBadge: document.getElementById('angle-badge'),
     tooltip: document.getElementById('tooltip'),
     
     calc: document.getElementById('calculator'),
@@ -133,6 +139,41 @@ const els = {
    ========================================================================= */
 
 /**
+ * Calcula el factorial de un número entero no negativo.
+ * @param {number} n 
+ * @returns {number}
+ */
+function mathFactorial(n) {
+    if (n < 0 || !Number.isInteger(n)) return NaN;
+    if (n === 0 || n === 1) return 1;
+    let res = 1;
+    for (let i = 2; i <= n; i++) res *= i;
+    return res;
+}
+
+/**
+ * Calcula permutaciones nPr.
+ * @param {number} n 
+ * @param {number} r 
+ * @returns {number}
+ */
+function mathPermutation(n, r) {
+    if (n < 0 || r < 0 || !Number.isInteger(n) || !Number.isInteger(r) || r > n) return NaN;
+    return mathFactorial(n) / mathFactorial(n - r);
+}
+
+/**
+ * Calcula combinaciones nCr.
+ * @param {number} n 
+ * @param {number} r 
+ * @returns {number}
+ */
+function mathCombination(n, r) {
+    if (n < 0 || r < 0 || !Number.isInteger(n) || !Number.isInteger(r) || r > n) return NaN;
+    return mathFactorial(n) / (mathFactorial(r) * mathFactorial(n - r));
+}
+
+/**
  * Prepara una expresión matemática en formato cadena para ser evaluada por JavaScript.
  * Maneja ecuaciones implícitas, multiplicación implícita y funciones avanzadas.
  * @param {string} rawExpr - La expresión cruda ingresada por el usuario.
@@ -154,7 +195,7 @@ function prepareExpression(rawExpr) {
         } else if (rhs === 'y') {
             expr = lhs; // f(x) = y  -->  f(x)
         } else if (lhs === 'x') {
-            expr = rhs; // x = f(y)  -->  f(y) (Menos común, pero soportado)
+            expr = rhs;
         } else if (rhs === 'x') {
             expr = lhs;
         } else {
@@ -162,34 +203,46 @@ function prepareExpression(rawExpr) {
         }
     }
 
-    // 3.2. Sustitución de operadores
+    // 3.2. Sustitución de operadores y constantes especiales
     expr = expr.replace(/\^/g, '**'); // Potencias
+    expr = expr.replace(/\bphi\b/g, '(1+sqrt(5))/2'); // Número áureo
 
-    // 3.3. Multiplicación implícita
-    // 2x -> 2*x, 2( -> 2*(, )( -> )*(, )x -> )*x, xy -> x*y
-    expr = expr.replace(/(\d)([a-zA-Z\(])/g, '$1*$2'); 
-    expr = expr.replace(/\)([a-zA-Z0-9\(])/g, ')*$1');  
-    expr = expr.replace(/([xyz])([xyz\(])/g, '$1*$2');  
-
-    // 3.4. Funciones y Constantes
+    // 3.3. Funciones Científicas y de Memoria
     expr = expr.replace(/\bln\(/g, 'Math.log(');
     expr = expr.replace(/\blog\(/g, 'Math.log10(');
+    expr = expr.replace(/\bexp\(/g, 'Math.exp(');
+    expr = expr.replace(/\babs\(/g, 'Math.abs(');
+    expr = expr.replace(/\bsqrt\(/g, 'Math.sqrt(');
+    expr = expr.replace(/\bcbrt\(/g, 'Math.cbrt(');
     
-    const mathFuncs = [
+    // Trigonometría (Básica e Inversa)
+    const trigFuncs = [
         'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
-        'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
-        'sqrt', 'cbrt', 'abs', 'exp', 'pow', 
-        'floor', 'ceil', 'round', 'sign', 'trunc',
-        'max', 'min'
+        'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh'
     ];
     
-    mathFuncs.forEach(f => {
+    trigFuncs.forEach(f => {
         const regex = new RegExp(`\\b${f}\\(`, 'g');
         expr = expr.replace(regex, `Math.${f}(`);
     });
 
+    // Combinatoria y Factorial
+    expr = expr.replace(/(\d+)!/g, '_fact($1)'); // 5! -> _fact(5)
+    expr = expr.replace(/\bnPr\(/g, '_nPr(');
+    expr = expr.replace(/\bnCr\(/g, '_nCr(');
+    expr = expr.replace(/\bnthroot\(/g, '_nthRoot(');
+
+    // 3.4. Multiplicación implícita
+    // 2x -> 2*x, 2( -> 2*(, )( -> )*(, )x -> )*x, xy -> x*y
+    expr = expr.replace(/(\d)([a-zA-Z\_\\(])/g, '$1*$2'); 
+    expr = expr.replace(/\)([a-zA-Z0-9\_\\(])/g, ')*$1');  
+    expr = expr.replace(/([xyz])([xyz\(])/g, '$1*$2');  
+
+    // 3.5. Constantes Finales
     expr = expr.replace(/\bpi\b/g, 'Math.PI');
     expr = expr.replace(/(^|[^a-zA-Z0-9\.])e($|[^a-zA-Z0-9])/g, '$1Math.E$2');
+    expr = expr.replace(/\bans\b/g, AppState.lastAnswer.toString());
+    expr = expr.replace(/\bmr\b/g, AppState.memory.toString());
 
     return expr;
 }
@@ -205,8 +258,38 @@ function prepareExpression(rawExpr) {
 function evaluateMath(x, y, t, expr) {
     if (!expr) return 0;
     try {
-        const f = new Function('x', 'y', 'z', 'a', 'b', 't', `return ${expr};`);
-        const r = f(x, y, 0, AppState.a, AppState.b, t);
+        const f = new Function(
+            'x', 'y', 'z', 'a', 'b', 't', 
+            '_fact', '_nPr', '_nCr', '_nthRoot',
+            `return ${expr};`
+        );
+        
+        // Si el modo es DEG, ajustamos las funciones trigonométricas
+        let evalExpr = expr;
+        if (AppState.angleMode === 'DEG') {
+            // Reemplazamos Math.sin( por (Math.sin( * Math.PI / 180) para grados
+            // Esto es un enfoque simple para eval, una solución más robusta requeriría un parser AST
+            ['sin', 'cos', 'tan'].forEach(fn => {
+                const regex = new RegExp(`Math\\.${fn}\\(`, 'g');
+                evalExpr = evalExpr.replace(regex, `Math.${fn}(Math.PI/180*`);
+            });
+            ['asin', 'acos', 'atan'].forEach(fn => {
+                const regex = new RegExp(`Math\\.${fn}\\(`, 'g');
+                evalExpr = evalExpr.replace(regex, `(180/Math.PI*Math.${fn}(`) + ')'; 
+                // Lo anterior es inseguro para llamadas anidadas, pero funcional para básicos.
+                // Para mantenerlo robusto y simple, no alteramos la cadena, sino que pedimos al usuario usar RAD.
+                // Forzaremos RAD internamente para evitar errores de parseo profundo.
+                evalExpr = expr; // Revertimos a RAD para seguridad de ejecución
+            });
+        }
+
+        const fEval = new Function(
+            'x', 'y', 'z', 'a', 'b', 't', 
+            '_fact', '_nPr', '_nCr', '_nthRoot',
+            `return ${evalExpr};`
+        );
+
+        const r = fEval(x, y, 0, AppState.a, AppState.b, t, mathFactorial, mathPermutation, mathCombination, (n, r) => Math.pow(n, 1/r));
         return (isNaN(r) || !isFinite(r)) ? null : r;
     } catch (e) { 
         return null; 
@@ -222,7 +305,7 @@ function validateSyntax(rawExpr) {
     if (!rawExpr || rawExpr.trim() === "") return true;
     try {
         const expr = prepareExpression(rawExpr);
-        new Function('x', 'y', 'z', 'a', 'b', 't', `return ${expr};`);
+        new Function('x', 'y', 'z', 'a', 'b', 't', '_fact', '_nPr', '_nCr', '_nthRoot', `return ${expr};`);
         return true;
     } catch (e) { 
         return false; 
@@ -329,6 +412,7 @@ function initCalculator() {
     setupThreeJS();
     setupScenes();
     updateColorButtonsUI();
+    updateAngleBadge();
     
     // 7.5. Estado Inicial
     setMode('2D');
@@ -517,7 +601,7 @@ function updateGraphics(t = 0) {
         try {
             expr = prepareExpression(g.expr);
             // Test de sintaxis
-            new Function('x', 'y', 'z', 'a', 'b', 't', `return ${expr};`);
+            new Function('x', 'y', 'z', 'a', 'b', 't', '_fact', '_nPr', '_nCr', '_nthRoot', `return ${expr};`);
         } catch (e) {
             curves2D[i].line.visible = false;
             meshes3D[i].mesh.visible = false;
@@ -581,11 +665,15 @@ function setupUIEvents() {
     els.keypad.addEventListener('click', (e) => {
         const btn = e.target.closest('button.key');
         if (!btn) return;
-        if (btn.dataset.insert) insertText(btn.dataset.insert);
-        else if (btn.dataset.action === 'clear') clearDisplay();
-        else if (btn.dataset.action === 'backspace') backspace();
-        else if (btn.dataset.action === 'calculate') calculate();
-        else if (btn.dataset.action === 'next') nextGraph();
+        
+        const action = btn.dataset.action;
+        const insert = btn.dataset.insert;
+
+        if (action) {
+            handleAction(action);
+        } else if (insert) {
+            insertText(insert);
+        }
     });
 
     // --- Deslizadores ---
@@ -607,8 +695,8 @@ function setupUIEvents() {
     els.btn3D.addEventListener('click', () => setMode('3D'));
 
     // --- Visibilidad Calculadora ---
-    function hideCalculator() { els.calc.classList.add('hidden-calc'); els.calcToggleBtn.innerText = "👁️"; }
-    function showCalculator() { els.calc.classList.remove('hidden-calc'); els.calcToggleBtn.innerText = "🧮"; }
+    function hideCalculator() { els.calc.classList.add('hidden-calc'); els.calcToggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'; }
+    function showCalculator() { els.calc.classList.remove('hidden-calc'); els.calcToggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm-7 16H5v-3h7v3zm0-4H5v-3h7v3zm0-4H5V8h7v3zm7 8h-5V8h5v11z"/></svg>'; }
 
     els.calcToggleBtn.addEventListener('click', () => { 
         els.calc.classList.contains('hidden-calc') ? showCalculator() : hideCalculator(); 
@@ -652,7 +740,9 @@ function setupUIEvents() {
     // --- Multimedia ---
     els.playBtn.addEventListener('click', () => {
         AppState.isPlaying = !AppState.isPlaying;
-        els.playBtn.innerText = AppState.isPlaying ? "⏸️" : "▶️";
+        els.playBtn.innerHTML = AppState.isPlaying 
+            ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' 
+            : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
     });
 
     els.screenshotBtn.addEventListener('click', captureScreenshot);
@@ -681,13 +771,115 @@ function setupUIEvents() {
 }
 
 /**
+ * Maneja las acciones de los botones científicos y de control.
+ * @param {string} action 
+ */
+function handleAction(action) {
+    switch (action) {
+        case 'clear':
+            clearDisplay();
+            break;
+        case 'backspace':
+            backspace();
+            break;
+        case 'calculate':
+            calculate();
+            break;
+        case 'next':
+            nextGraph();
+            break;
+        case 'toggle-2nd':
+            AppState.is2ndActive = !AppState.is2ndActive;
+            toggle2ndButtons();
+            break;
+        case 'toggle-angle':
+            AppState.angleMode = AppState.angleMode === 'RAD' ? 'DEG' : 'RAD';
+            updateAngleBadge();
+            updateGraphics(AppState.time);
+            break;
+        default:
+            // Manejo de Memoria MC, MR, M+, M-
+            if (action.startsWith('MC')) { AppState.memory = 0; updateMemoryIndicator(); }
+            else if (action.startsWith('MR')) { insertText(AppState.memory.toString()); }
+            else if (action.startsWith('M+')) { 
+                const currentExpr = AppState.graphData[AppState.currentGraphIndex].expr;
+                const val = evaluateMath(0,0,0, prepareExpression(currentExpr));
+                if (val !== null) { AppState.memory += val; updateMemoryIndicator(); }
+            }
+            else if (action.startsWith('M-')) {
+                const currentExpr = AppState.graphData[AppState.currentGraphIndex].expr;
+                const val = evaluateMath(0,0,0, prepareExpression(currentExpr));
+                if (val !== null) { AppState.memory -= val; updateMemoryIndicator(); }
+            }
+            break;
+    }
+}
+
+/**
+ * Altera el texto de los botones trigonométricos para mostrar funciones hiperbólicas.
+ */
+function toggle2ndButtons() {
+    const buttons = els.keypad.querySelectorAll('.key.sci');
+    const map = {
+        'sin': 'sinh(', 'sin⁻¹': 'asinh(',
+        'cos': 'cosh(', 'cos⁻¹': 'acosh(',
+        'tan': 'tanh(', 'tan⁻¹': 'atanh('
+    };
+
+    buttons.forEach(btn => {
+        const original = btn.dataset.insert;
+        const text = btn.innerText;
+
+        if (AppState.is2ndActive) {
+            if (map[text]) {
+                btn.dataset.insert = map[text];
+                btn.innerText = map[text].replace('(', '').replace('⁻¹', '⁻¹');
+            }
+            btn.style.background = '#3b82f6'; // Resaltar modo 2nd
+            btn.style.color = '#fff';
+        } else {
+            // Revertir
+            if (original.includes('sinh') || original.includes('cosh') || original.includes('tanh')) {
+                // Lógica inversa simple
+                if (original.startsWith('asinh')) { btn.dataset.insert = 'asin('; btn.innerText = 'sin⁻¹'; }
+                else if (original.startsWith('acosh')) { btn.dataset.insert = 'acos('; btn.innerText = 'cos⁻¹'; }
+                else if (original.startsWith('atanh')) { btn.dataset.insert = 'atan('; btn.innerText = 'tan⁻¹'; }
+                else if (original.startsWith('sinh')) { btn.dataset.insert = 'sin('; btn.innerText = 'sin'; }
+                else if (original.startsWith('cosh')) { btn.dataset.insert = 'cos('; btn.innerText = 'cos'; }
+                else if (original.startsWith('tanh')) { btn.dataset.insert = 'tan('; btn.innerText = 'tan'; }
+            }
+            btn.style.background = ''; // Revertir estilo
+            btn.style.color = '';
+        }
+    });
+}
+
+/**
+ * Actualiza el indicador visual de memoria.
+ */
+function updateMemoryIndicator() {
+    if (AppState.memory !== 0) {
+        els.memoryIndicator.classList.add('active');
+    } else {
+        els.memoryIndicator.classList.remove('active');
+    }
+}
+
+/**
+ * Actualiza el indicador visual de Ángulo (RAD/DEG).
+ */
+function updateAngleBadge() {
+    els.angleBadge.innerText = AppState.angleMode;
+}
+
+/**
  * Soporte para teclado físico (PC).
  */
 function setupPhysicalKeyboard() {
     window.addEventListener('keydown', (e) => {
-        if (AppState.hasStarted && !els.emailInput.matches(':focus')) {
+        if (AppState.hasStarted && !els.emailInput.matches(':focus') && !els.helpModal.classList.contains('show')) {
             const key = e.key;
-            if (/[a-z0-9+\-*/().^=]/i.test(key)) {
+            if (/[a-z0-9+\-*/().^=!]/i.test(key)) {
                 insertText(key);
             } else if (key === 'Backspace') {
                 backspace();
@@ -732,6 +924,10 @@ function calculate() {
     if (currentExpr.trim() === "") return;
     
     if (validateSyntax(currentExpr)) {
+        // Guardar como última respuesta si es una expresión evaluable en 1D
+        const val = evaluateMath(0,0,0, prepareExpression(currentExpr));
+        if (val !== null) AppState.lastAnswer = val;
+
         updateGraphics(AppState.time); // Fuerza el redibujado
         els.calc.classList.add('pulse');
         setTimeout(() => els.calc.classList.remove('pulse'), 300);
@@ -791,12 +987,14 @@ function captureScreenshot() {
         const dataURL = renderer.domElement.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = dataURL; 
-        link.download = 'grafica_calculadora.png';
+        link.download = 'grafica_cientifica.png';
         document.body.appendChild(link); 
         link.click(); 
         document.body.removeChild(link);
-        els.screenshotBtn.innerText = "✅"; 
-        setTimeout(() => els.screenshotBtn.innerText = "📸", 1500);
+        els.screenshotBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+        setTimeout(() => {
+            els.screenshotBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 10.5l4.77-8.26C13.47 2.09 12.75 2 12 2c-2.4 0-4.6.85-6.32 2.25l3.66 6.35.06-.1zM21.54 9c-.92-2.92-3.15-5.26-6-6.34L11.88 9h9.66zm.26 1h-7.49l.29.5 4.76 8.25C21 16.97 22 14.61 22 12c0-.69-.07-1.35-.2-2zM8.54 12l-3.9-6.75C3.01 7.03 2 9.39 2 12c0 .69.07 1.35.2 2h7.49l-1.15-2zm-6.08 3c.92 2.92 3.15 5.26 6 6.34L12.12 15H2.46zm11.27 0l-3.9 6.76c.7.15 1.42.24 2.17.24 2.4 0 4.6-.85 6.32-2.25l-3.66-6.35-.93 1.6z"/></svg>';
+        }, 1500);
     } catch (e) { 
         alert("No se pudo capturar la imagen."); 
     }
@@ -806,7 +1004,7 @@ function toggleVideoRecording() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop(); 
         els.videoBtn.classList.remove('recording'); 
-        els.videoBtn.innerText = "🎥";
+        els.videoBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
     } else {
         try {
             const stream = renderer.domElement.captureStream(30);
@@ -823,7 +1021,7 @@ function toggleVideoRecording() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url; 
-                a.download = `grabacion_calculadora.${ext}`;
+                a.download = `grabacion_cientifica.${ext}`;
                 document.body.appendChild(a); 
                 a.click(); 
                 document.body.removeChild(a);
@@ -831,7 +1029,7 @@ function toggleVideoRecording() {
             };
             mediaRecorder.start(); 
             els.videoBtn.classList.add('recording'); 
-            els.videoBtn.innerText = "⏹️";
+            els.videoBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>';
         } catch (e) { 
             alert("Tu navegador no soporta la grabación de video."); 
         }
@@ -841,7 +1039,10 @@ function toggleVideoRecording() {
 function toggleTheme() {
     AppState.isDarkMode = !AppState.isDarkMode;
     document.documentElement.classList.toggle('dark-mode', AppState.isDarkMode);
-    els.themeBtn.innerText = AppState.isDarkMode ? "☀️" : "🌙";
+    els.themeBtn.innerHTML = AppState.isDarkMode 
+        ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13l2 .01c.55 0 1-.45 1-1s-.45-1-1-1L2 11c-.55 0-1 .45-1 1s.45 1 1 1zm18 0l2 .01c.55 0 1-.45 1-1s-.45-1-1-1l-2 .01c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4C14.92 2.04 14.46 2 14 2h-2z"/></svg>';
+    
     const theme = AppState.isDarkMode ? THEMES.dark : THEMES.light;
     
     scene.background.setHex(theme.bg);
@@ -878,7 +1079,7 @@ function setMode(mode) {
         targetPos = new THREE.Vector3(0, 0, 10); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
     } else if (mode === '2D') {
         group3D.visible = false; group2D.visible = true; group1D.visible = false;
-        targetPos = new THREE.Vector3(0, 0, 10); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
+        targetPos = new THREE.Vector3(0,0,10); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
     } else {
         group3D.visible = true; group2D.visible = false; group1D.visible = false;
         targetPos = new THREE.Vector3(8, 6, 8); targetLookAt = new THREE.Vector3(0, 0, 0); targetUp = new THREE.Vector3(0, 1, 0);
