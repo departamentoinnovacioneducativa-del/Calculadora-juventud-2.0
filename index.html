@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Calculadora Gráfica Institucional</title>
     
-    <!-- Precargar imagen para que aparezca al instante -->
     <link rel="preload" as="image" href="Calculadora.jpg">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,15 +13,11 @@
     
     <link rel="stylesheet" href="style.css">
 
-    <!-- Three.js versión clásica (No requiere servidor local) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <!-- =========================================
-         PANTALLA DE INICIO (SPLASH SCREEN)
-         ========================================= -->
     <div id="splash-screen">
         <div class="splash-content">
             <img src="Calculadora.jpg" alt="Calculadora Institucional" class="splash-img">
@@ -36,14 +31,8 @@
         </div>
     </div>
 
-    <!-- =========================================
-         LIENZO GRÁFICO (Fondo Estático)
-         ========================================= -->
     <div id="viewport"></div>
 
-    <!-- =========================================
-         INTERFAZ SUPERPUESTA (HUD y Botones)
-         ========================================= -->
     <div id="ui-overlay">
         <div class="hud-overlay">
             <div class="mode-badge">
@@ -52,7 +41,7 @@
             </div>
         </div>
 
-        <!-- Botones Superiores Derechos -->
+        <!-- Botones Superiores Izquierdos -->
         <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica">▶️</button>
         <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video">🎥</button>
         <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla">📸</button>
@@ -63,25 +52,19 @@
         <div id="version-tag">versión 2.033</div>
     </div>
 
-    <!-- =========================================
-         CALCULADORA (Panel Lateral / Inferior)
-         ========================================= -->
     <div class="calculator-container" id="calculator">
-        
-        <!-- Cabecera (Arrastrable en PC, Handle en Móvil) -->
         <div class="calc-header" id="calc-header">
             <div class="mobile-drag-handle" id="mobile-handle"></div>
+            <!-- Nuevo botón para cerrar la calculadora -->
+            <button type="button" class="close-calc-btn" id="close-calc-btn" aria-label="Ocultar Calculadora">✖</button>
             <span class="header-title">GRAPH ENGINE PRO</span>
-            <button type="button" class="win-btn" id="btn-minimize" aria-label="Minimizar"></button>
         </div>
 
-        <!-- Pantalla LCD -->
         <div class="screen-container">
             <div class="screen-label">f(x, y, t) =</div>
             <div class="screen-output" id="display"><span class="cursor"></span></div>
         </div>
 
-        <!-- Controles Intermedios -->
         <div class="controls-area">
             <div class="dropdown-container">
                 <button type="button" id="examples-btn" class="examples-btn">Ejemplos Rápidos ⌄</button>
@@ -120,57 +103,48 @@
             </div>
         </div>
 
-        <!-- Teclado Numérico Completo -->
         <div class="keypad" id="keypad">
-            <!-- Fila 1: Funciones -->
             <button type="button" class="key func" data-insert="sin(">sin</button>
             <button type="button" class="key func" data-insert="cos(">cos</button>
             <button type="button" class="key func" data-insert="tan(">tan</button>
             <button type="button" class="key func" data-insert="log(">log</button>
             <button type="button" class="key func" data-insert="ln(">ln</button>
 
-            <!-- Fila 2: Variables y Agrupación -->
             <button type="button" class="key func" data-insert="x">x</button>
             <button type="button" class="key func" data-insert="y">y</button>
             <button type="button" class="key func" data-insert="z">z</button>
             <button type="button" class="key func" data-insert="t">t</button>
             <button type="button" class="key func" data-insert="(">(</button>
 
-            <!-- Fila 3: Números y Operaciones -->
             <button type="button" class="key func" data-insert=")">)</button>
             <button type="button" class="key" data-insert="7">7</button>
             <button type="button" class="key" data-insert="8">8</button>
             <button type="button" class="key" data-insert="9">9</button>
             <button type="button" class="key op" data-insert="/">÷</button>
 
-            <!-- Fila 4 -->
             <button type="button" class="key op" data-insert="^">xʸ</button>
             <button type="button" class="key" data-insert="4">4</button>
             <button type="button" class="key" data-insert="5">5</button>
             <button type="button" class="key" data-insert="6">6</button>
             <button type="button" class="key op" data-insert="*">×</button>
 
-            <!-- Fila 5 -->
             <button type="button" class="key op" data-insert="sqrt(">√</button>
             <button type="button" class="key" data-insert="1">1</button>
             <button type="button" class="key" data-insert="2">2</button>
             <button type="button" class="key" data-insert="3">3</button>
             <button type="button" class="key op" data-insert="+">+</button>
 
-            <!-- Fila 6 -->
             <button type="button" class="key op" data-insert="-">-</button>
             <button type="button" class="key" data-insert="0">0</button>
             <button type="button" class="key" data-insert=".">.</button>
             <button type="button" class="key op" data-insert="pi">π</button>
             <button type="button" class="key op" data-action="backspace">DEL</button>
 
-            <!-- Fila 7: Limpiar e Igual -->
             <button type="button" class="key clear" data-action="clear">AC</button>
             <button type="button" class="key enter" data-action="calculate" style="grid-column: span 4;">=</button>
         </div>
     </div>
 
-    <!-- Script Principal -->
     <script src="script.js"></script>
 </body>
 </html>
