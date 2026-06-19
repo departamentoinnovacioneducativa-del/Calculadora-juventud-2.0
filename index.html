@@ -35,9 +35,7 @@
     <!-- =========================================
          BIBLIOTECAS EXTERNAS (THREE.JS)
          ========================================= -->
-    <!-- Three.js núcleo (versión estable r128) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- OrbitControls para manipulación de cámara 3D -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <title>Calculadora Científica Gráfica Institucional</title>
@@ -58,7 +56,7 @@
                 <div class="splash-loading-bar"><div class="splash-loading-progress"></div></div>
             </div>
             
-            <form id="login-form" class="login-box" autocomplete="off" onsubmit="return false;">
+            <form id="login-form" class="login-box" autocomplete="off">
                 <h2 id="login-title">Acceso Institucional</h2>
                 <p class="login-subtitle">Verificación de dominio autorizado</p>
                 
@@ -110,42 +108,43 @@
                 <div class="mode-dot" id="status-dot"></div>
                 <span id="status-text">MODO 2D</span>
             </div>
-            <!-- El indicador RAD ha sido removido según requerimientos -->
         </div>
 
-        <!-- Botones de Control Superior Izquierdo (SVG Vectorial) -->
-        <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica" title="Iniciar o pausar animación">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-        
-        <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video" title="Grabar y descargar video">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-        </button>
-        
-        <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla" title="Descargar imagen PNG">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 10.5l4.77-8.26C13.47 2.09 12.75 2 12 2c-2.4 0-4.6.85-6.32 2.25l3.66 6.35.06-.1zM21.54 9c-.92-2.92-3.15-5.26-6-6.34L11.88 9h9.66zm.26 1h-7.49l.29.5 4.76 8.25C21 16.97 22 14.61 22 12c0-.69-.07-1.35-.2-2zM8.54 12l-3.9-6.75C3.01 7.03 2 9.39 2 12c0 .69.07 1.35.2 2h7.49l-1.15-2zm-6.08 3c.92 2.92 3.15 5.26 6 6.34L12.12 15H2.46zm11.27 0l-3.9 6.76c.7.15 1.42.24 2.17.24 2.4 0 4.6-.85 6.32-2.25l-3.66-6.35-.93 1.6z"/></svg>
-        </button>
-        
-        <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar u Ocultar Calculadora" title="Mostrar/Ocultar panel">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H4V8h16v10zm-8-2c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
-        </button>
-        
-        <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema claro u oscuro" title="Cambiar tema">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4C14.92 2.04 14.46 2 14 2h-2z"/></svg>
-        </button>
+        <!-- Contenedor Flexbox para Botones Superiores (Evita superposición) -->
+        <div class="top-controls-bar">
+            <button type="button" id="play-btn" class="top-control-btn" aria-label="Animar gráfica" title="Iniciar o pausar animación">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            
+            <button type="button" id="video-btn" class="top-control-btn" aria-label="Grabar video" title="Grabar y descargar video">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            </button>
+            
+            <button type="button" id="screenshot-btn" class="top-control-btn" aria-label="Captura de pantalla" title="Descargar imagen PNG">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 10.5l4.77-8.26C13.47 2.09 12.75 2 12 2c-2.4 0-4.6.85-6.32 2.25l3.66 6.35.06-.1zM21.54 9c-.92-2.92-3.15-5.26-6-6.34L11.88 9h9.66zm.26 1h-7.49l.29.5 4.76 8.25C21 16.97 22 14.61 22 12c0-.69-.07-1.35-.2-2zM8.54 12l-3.9-6.75C3.01 7.03 2 9.39 2 12c0 .69.07 1.35.2 2h7.49l-1.15-2zm-6.08 3c.92 2.92 3.15 5.26 6 6.34L12.12 15H2.46zm11.27 0l-3.9 6.76c.7.15 1.42.24 2.17.24 2.4 0 4.6-.85 6.32-2.25l-3.66-6.35-.93 1.6z"/></svg>
+            </button>
+            
+            <button type="button" id="calc-toggle" class="top-control-btn" aria-label="Mostrar u Ocultar Calculadora" title="Mostrar/Ocultar panel">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H4V8h16v10zm-8-2c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+            </button>
+            
+            <button type="button" id="theme-toggle" class="top-control-btn" aria-label="Cambiar tema claro u oscuro" title="Cambiar tema">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4C14.92 2.04 14.46 2 14 2h-2z"/></svg>
+            </button>
 
-        <button type="button" id="help-btn" class="top-control-btn" aria-label="Ayuda e instrucciones" title="Manual de uso">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
-        </button>
+            <button type="button" id="help-btn" class="top-control-btn" aria-label="Ayuda e instrucciones" title="Manual de uso">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+            </button>
 
-        <!-- Botones de Redimensión de Calculadora (NUEVOS) -->
-        <button type="button" id="calc-resize-up" class="top-control-btn" aria-label="Aumentar tamaño de calculadora" title="Aumentar tamaño">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        </button>
-        
-        <button type="button" id="calc-resize-down" class="top-control-btn" aria-label="Disminuir tamaño de calculadora" title="Disminuir tamaño">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
-        </button>
+            <div class="resize-controls">
+                <button type="button" id="calc-resize-up" class="top-control-btn small" aria-label="Aumentar tamaño de calculadora" title="Aumentar tamaño">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </button>
+                <button type="button" id="calc-resize-down" class="top-control-btn small" aria-label="Disminuir tamaño de calculadora" title="Disminuir tamaño">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
+                </button>
+            </div>
+        </div>
 
         <!-- Tooltip de Coordenadas -->
         <div id="tooltip" class="tooltip" role="tooltip"></div>
@@ -157,11 +156,6 @@
     <!-- =========================================
          PLANTILLAS DE EJEMPLOS (HTML Nativo)
          ========================================= -->
-    <!-- 
-        Usamos la etiqueta template para definir los ejemplos en HTML puro.
-        Esto asegura que se desplieguen correctamente y sean fácil de mantener.
-        La esfera 3D ha sido corregida a z = sqrt(b^2 - x^2 - y^2) para que el motor la dibuje.
-    -->
     <template id="examples-template">
         <div class="examples-item" data-expr="a * sin(x * b + t)" data-mode="2D">1. Onda en Movimiento 2D</div>
         <div class="examples-item" data-expr="a * sin(x * b)" data-mode="2D">2. Onda Senoidal 2D</div>
@@ -172,7 +166,6 @@
         <div class="examples-item" data-expr="a * exp(-(x^2 + y^2) / b) * cos(sqrt(x^2 + y^2))" data-mode="3D">7. Sombrero Mexicano 3D</div>
         <div class="examples-item" data-expr="(x^2 - y^2) * a * 0.1" data-mode="3D">8. Silla de Montar 3D</div>
         <div class="examples-item" data-expr="sin(x + t) * cos(y + t)" data-mode="3D">9. Onda Dinámica 3D</div>
-        <!-- Corrección de la Esfera: El motor 3D grafica z = f(x,y). Para una esfera de radio b, z = sqrt(b^2 - x^2 - y^2) -->
         <div class="examples-item" data-expr="sqrt(b^2 - x^2 - y^2)" data-mode="3D">10. Esfera 3D (Superior)</div>
         <div class="examples-item" data-expr="z^2 = a^2 * (x^2 + y^2)" data-mode="3D">11. Cono 3D</div>
         <div class="examples-item" data-expr="(sqrt(x^2 + y^2) - a)^2 + z^2 = b^2" data-mode="3D">12. Toroide 3D</div>
@@ -203,10 +196,6 @@
                 <div class="memory-indicator" id="memory-indicator" aria-live="polite">M</div>
             </div>
             
-            <!-- 
-                contenteditable="true" permite al usuario hacer clic aquí, 
-                escribir con su teclado físico o usar Ctrl+V para pegar fórmulas. 
-            -->
             <div 
                 class="screen-output" 
                 id="display" 
@@ -223,13 +212,13 @@
         <!-- Área de Controles Intermedios -->
         <div class="controls-area">
             
-            <!-- Menú Desplegable de Ejemplos (Estructura mejorada) -->
+            <!-- Menú Desplegable de Ejemplos -->
             <div class="dropdown-container">
                 <button type="button" id="examples-btn" class="examples-btn" aria-haspopup="true" aria-expanded="false">
                     Ejemplos Rápidos (Incluye Esfera) ⌄
                 </button>
                 <div id="examples-dropdown" class="examples-dropdown" role="menu">
-                    <!-- Los elementos se inyectarán aquí desde la plantilla -->
+                    <!-- Inyectado por JS -->
                 </div>
             </div>
 
@@ -403,7 +392,7 @@
                     <li>Presiona <strong>ENTER</strong> para compilar la ecuación actual.</li>
                     <li>Presiona <strong>SGT</strong> para fijar la gráfica y editar la siguiente automáticamente.</li>
                     <li>Use el menú desplegable para cambiar entre los 10 espacios de gráficas.</li>
-                    <li>Use los botones <strong>+</strong> y <strong>-</strong> en la esquina superior izquierda para cambiar el tamaño del panel de la calculadora.</li>
+                    <li>Use los botones <strong>+</strong> y <strong>-</strong> en la barra superior para cambiar el tamaño del panel de la calculadora.</li>
                 </ul>
 
                 <h3>6. Sintaxis Avanzada</h3>
