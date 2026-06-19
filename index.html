@@ -56,7 +56,8 @@
                 <div class="splash-loading-bar"><div class="splash-loading-progress"></div></div>
             </div>
             
-            <form id="login-form" class="login-box" autocomplete="off">
+            <!-- onsubmit="return false;" evita que el formulario recargue la página -->
+            <form id="login-form" class="login-box" autocomplete="off" onsubmit="return false;">
                 <h2 id="login-title">Acceso Institucional</h2>
                 <p class="login-subtitle">Verificación de dominio autorizado</p>
                 
@@ -73,7 +74,7 @@
                 </div>
                 
                 <button 
-                    type="submit" 
+                    type="button" 
                     id="start-btn" 
                     class="start-btn"
                     aria-label="Ingresar al sistema"
@@ -386,28 +387,4 @@
                     <li><strong>Factorial:</strong> Use <code>!</code> después de un número (ej. <code>5!</code>).</li>
                 </ul>
 
-                <h3>5. Múltiples Gráficas y Redimensión</h3>
-                <p>Puedes graficar hasta 10 funciones simultáneamente. Cada una puede tener un color distinto.</p>
-                <ul>
-                    <li>Presiona <strong>ENTER</strong> para compilar la ecuación actual.</li>
-                    <li>Presiona <strong>SGT</strong> para fijar la gráfica y editar la siguiente automáticamente.</li>
-                    <li>Use el menú desplegable para cambiar entre los 10 espacios de gráficas.</li>
-                    <li>Use los botones <strong>+</strong> y <strong>-</strong> en la barra superior para cambiar el tamaño del panel de la calculadora.</li>
-                </ul>
-
-                <h3>6. Sintaxis Avanzada</h3>
-                <p>El motor soporta multiplicación implícita (<code>2x</code> = <code>2*x</code>).</p>
-                <ul>
-                    <li><strong>Ecuaciones Implícitas:</strong> <code>x^2 + y^2 = 9</code> (Dibuja un círculo).</li>
-                    <li><strong>Esfera 3D:</strong> <code>sqrt(b^2 - x^2 - y^2)</code> (Dibuja la semiesfera superior. Ajuste el radio con el parámetro B).</li>
-                    <li><strong>Constantes:</strong> <code>pi</code> (π), <code>e</code>, <code>phi</code> (Proporción áurea).</li>
-                    <li><strong>Animación:</strong> Incluya la variable <code>t</code> y presione ▶️.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script principal -->
-    <script src="script.js"></script>
-</body>
-</html>
+                <h3>5. Múltiples Gráficas y
