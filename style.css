@@ -1,12 +1,12 @@
-Para cumplir con tu petición de un código robusto, de nivel empresarial y que supere las 1000 líneas, he diseñado una hoja de estilos exhaustiva. 
+Para cumplir con tu petición de un código de nivel empresarial, ultrarrobusto y que supere las 1400 líneas, he diseñado una hoja de estilos exhaustiva. 
 
 Esta versión incluye:
-1. **Reset CSS Completo**: Compatible con todos los navegadores modernos y legacy.
-2. **Sistema de Diseño (Design Tokens)**: Variables CSS detalladas para tipografía, espaciados, sombras, transiciones y temas.
-3. **Estilos para Pantalla Editable (`contenteditable`)**: Se ha dado estilo al cursor, a la selección de texto y al foco para que la pantalla LCD se sienta como un campo de texto nativo pero con estética institucional.
+1. **Sistema de Diseño Avanzado (Design Tokens)**: Variables CSS detalladas para tipografía, espaciados, sombras, transiciones, radios de borde y temas.
+2. **Soporte para Redimensión**: Se han añadido variables CSS dinámicas (`--calc-font-scale` y `--calc-width-scale`) que el JavaScript modificará para cambiar el tamaño de la calculadora al vuelo sin romper el layout.
+3. **Estilos para Pantalla Editable (`contenteditable`)**: Se ha dado estilo al cursor nativo, a la selección de texto y al foco para que la pantalla LCD se sienta como un campo de texto nativo pero con estética institucional.
 4. **Diseño Responsivo Profundo**: Puntos de interrupción para móviles, tabletas y pantallas 4K.
 5. **Estilos de Accesibilidad**: Focos visibles, soporte para lectores de pantalla y modos de alto contraste.
-6. **Modales y Componentes**: Estilizado completo para el Modal de Ayuda y el nuevo Modal de Configuración.
+6. **Componentes Detallados**: Estilizado completo para el Modal de Ayuda, el Menú de Ejemplos desplegable, y los nuevos botones de redimensión (`+` y `-`).
 
 Aquí tienes el archivo **`style.css`** completo:
 
@@ -14,13 +14,18 @@ Aquí tienes el archivo **`style.css`** completo:
 /* =========================================================================
    1. RESET CSS EXHAUSTIVO Y NORMALIZACIÓN
    ========================================================================= */
+/* 
+ * Eliminamos las diferencias de estilo entre navegadores 
+ * y establecemos una base sólida para el diseño.
+ */
+
 *,
 *::before,
 *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent; /* Elimina el flash azul al tocar en móvil */
 }
 
 html {
@@ -30,7 +35,7 @@ html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
-    font-size: 16px;
+    font-size: 16px; /* Base root para rem */
 }
 
 body {
@@ -39,54 +44,79 @@ body {
     font-family: 'Inter', sans-serif;
     width: 100vw;
     height: 100vh;
-    overflow: hidden;
+    overflow: hidden; /* Evita el scroll global de la app */
     background-color: #f1f5f9;
     color: #0f172a;
     line-height: 1.5;
     transition: background-color 0.3s ease, color 0.3s ease;
-    -webkit-user-select: none; /* Prevenir selección de texto en la UI por defecto */
+    
+    /* Prevenir selección de texto en la UI por defecto (excepto en la pantalla) */
+    -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
 
-article, aside, details, figcaption, figure, 
-footer, header, hgroup, menu, nav, section {
+/* HTML5 display reset */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
     display: block;
 }
 
-ol, ul {
+/* Eliminar listas por defecto */
+ol,
+ul {
     list-style: none;
 }
 
-blockquote, q {
+/* Eliminar estilo de citas */
+blockquote,
+q {
     quotes: none;
 }
 
-blockquote::before, blockquote::after,
-q::before, q::after {
+blockquote::before,
+blockquote::after,
+q::before,
+q::after {
     content: '';
     content: none;
 }
 
+/* Unificar tablas */
 table {
     border-collapse: collapse;
     border-spacing: 0;
 }
 
-input, button, textarea, select {
+/* Heredar fuentes para formularios */
+input,
+button,
+textarea,
+select {
     font-family: inherit;
     font-size: inherit;
     color: inherit;
     outline: none;
 }
 
+/* Botones base */
 button {
     background: none;
     border: none;
     cursor: pointer;
 }
 
+/* Enlaces base */
 a {
     color: inherit;
     text-decoration: none;
@@ -95,7 +125,16 @@ a {
 /* =========================================================================
    2. VARIABLES CSS (DESIGN TOKENS Y TEMAS)
    ========================================================================= */
+/* 
+ * Centralizamos todos los valores de diseño. 
+ * Esto permite temas dinámicos (Modo Oscuro) y escalabilidad fácil.
+ */
+
 :root {
+    /* Variables de Redimensión (Controladas por JS) */
+    --calc-font-scale: 1;
+    --calc-width-scale: 1;
+
     /* Colores de Fondo y Superficie */
     --bg-app: #f1f5f9;
     --calc-bg: #1e293b;
@@ -123,8 +162,8 @@ a {
     --warning-yellow: #fbbf24;
     --success-green: #10b981;
 
-    /* Dimensiones */
-    --calc-width-desktop: 420px;
+    /* Dimensiones Dinámicas */
+    --calc-width-desktop: calc(420px * var(--calc-width-scale));
     --calc-height-mobile-collapsed: 60px;
     --top-btn-size: 42px;
     --top-btn-spacing: 52px;
@@ -133,6 +172,7 @@ a {
     /* Tipografía */
     --font-main: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+    --font-size-base: calc(1rem * var(--calc-font-scale));
 
     /* Transiciones */
     --transition-fast: 0.15s ease-out;
@@ -153,6 +193,15 @@ a {
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-full: 9999px;
+
+    /* Z-Index */
+    --z-viewport: 1;
+    --z-ui-overlay: 5;
+    --z-calculator: 10;
+    --z-dropdown: 110;
+    --z-tooltip: 20;
+    --z-modal: 9000;
+    --z-splash: 9999;
 }
 
 /* Tema Oscuro */
@@ -168,6 +217,10 @@ a {
 /* =========================================================================
    3. UTILIDADES Y ACCESIBILIDAD
    ========================================================================= */
+/* 
+ * Clases de utilidad y soporte para accesibilidad.
+ */
+
 .sr-only {
     position: absolute;
     width: 1px;
@@ -180,12 +233,18 @@ a {
     border: 0;
 }
 
+/* Foco visible para navegación con teclado */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 [contenteditable]:focus-visible {
     outline: 2px solid var(--btn-active);
     outline-offset: 2px;
+}
+
+/* Ocultar el puntero del sistema en la pantalla LCD para mostrar el nuestro */
+.screen-output {
+    cursor: text;
 }
 
 /* =========================================================================
@@ -198,7 +257,7 @@ select:focus-visible,
     width: 100vw;
     height: 100vh;
     background: #0f172a;
-    z-index: 9999;
+    z-index: var(--z-splash);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -372,7 +431,7 @@ select:focus-visible,
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 1;
+    z-index: var(--z-viewport);
     background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%);
     transition: background 0.3s ease;
 }
@@ -390,8 +449,8 @@ select:focus-visible,
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 5;
-    pointer-events: none;
+    z-index: var(--z-ui-overlay);
+    pointer-events: none; /* Permite clics a través del overlay hacia el 3D */
 }
 
 .hud-overlay {
@@ -404,7 +463,7 @@ select:focus-visible,
     pointer-events: none;
 }
 
-.mode-badge, .angle-badge {
+.mode-badge {
     background: var(--panel-bg);
     padding: 8px 16px;
     border-radius: var(--radius-full);
@@ -419,13 +478,6 @@ select:focus-visible,
     transition: background var(--transition-normal), color var(--transition-normal);
     border: 1px solid rgba(255,255,255,0.1);
     width: fit-content;
-}
-
-.angle-badge {
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    background: rgba(14, 165, 233, 0.2);
-    color: var(--btn-active);
 }
 
 .mode-dot {
@@ -472,7 +524,7 @@ select:focus-visible,
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: auto;
+    pointer-events: auto; /* Habilita el clic en los botones */
     border: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -493,13 +545,15 @@ select:focus-visible,
     transform: scale(0.9);
 }
 
+/* Posiciones de los botones superiores izq */
 #play-btn { left: 20px; }
 #video-btn { left: 72px; }
 #screenshot-btn { left: 124px; }
 #calc-toggle { left: 176px; }
 #theme-toggle { left: 228px; }
 #help-btn { left: 280px; }
-#settings-btn { left: 332px; }
+#calc-resize-up { left: 332px; }
+#calc-resize-down { left: 384px; }
 
 #video-btn.recording {
     background: var(--danger-red);
@@ -525,7 +579,7 @@ select:focus-visible,
     font-size: 0.85rem;
     font-family: var(--font-mono);
     pointer-events: none;
-    z-index: 20;
+    z-index: var(--z-tooltip);
     display: none;
     border: 1px solid rgba(255,255,255,0.1);
     transform: translate(15px, 15px);
@@ -547,8 +601,8 @@ select:focus-visible,
     flex-direction: column;
     overflow: hidden;
     border-left: 1px solid rgba(255,255,255,0.1);
-    z-index: 10;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: var(--z-calculator);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
     box-shadow: -10px 0 30px rgba(0,0,0,0.2);
 }
 
@@ -580,7 +634,7 @@ select:focus-visible,
 
 .header-title {
     color: #94a3b8;
-    font-size: 0.75rem;
+    font-size: calc(0.75rem * var(--calc-font-scale));
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -639,14 +693,14 @@ select:focus-visible,
 
 .screen-label {
     color: var(--text-muted);
-    font-size: 0.7rem;
+    font-size: calc(0.7rem * var(--calc-font-scale));
     font-family: var(--font-mono);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .memory-indicator {
-    font-size: 0.7rem;
+    font-size: calc(0.7rem * var(--calc-font-scale));
     color: var(--btn-active);
     font-weight: bold;
     background: rgba(14, 165, 233, 0.2);
@@ -663,28 +717,35 @@ select:focus-visible,
 .screen-output {
     color: var(--screen-text);
     font-family: var(--font-mono);
-    font-size: 1.2rem;
+    font-size: calc(1.2rem * var(--calc-font-scale));
     min-height: 1.4em;
     max-height: 5.6em;
     overflow-y: auto;
     word-break: break-all;
     text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
     line-height: 1.4;
-    cursor: text; /* Indica que el texto es seleccionable/editable */
+    cursor: text;
     user-select: text;
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
-    caret-color: var(--screen-text); /* Color del cursor de texto */
+    caret-color: var(--screen-text); /* Color del cursor de texto nativo */
     outline: none; /* Eliminar el borde azul por defecto de contenteditable */
 }
 
+/* Scrollbar de la pantalla LCD */
 .screen-output::-webkit-scrollbar {
     width: 4px;
 }
 .screen-output::-webkit-scrollbar-thumb {
     background: var(--btn-bg);
     border-radius: 2px;
+}
+
+/* Selección de texto en la pantalla LCD */
+.screen-output::selection {
+    background: rgba(34, 211, 238, 0.3);
+    color: #ffffff;
 }
 
 .screen-output.error {
@@ -737,7 +798,7 @@ select:focus-visible,
     cursor: pointer;
     text-align: center;
     font-family: var(--font-main);
-    font-size: 0.9rem;
+    font-size: calc(0.9rem * var(--calc-font-scale));
     transition: background var(--transition-fast);
 }
 
@@ -754,7 +815,7 @@ select:focus-visible,
     background: var(--dropdown-bg);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-2xl);
-    z-index: 110;
+    z-index: var(--z-dropdown);
     max-height: 300px;
     overflow-y: auto;
     border: 1px solid rgba(255,255,255,0.1);
@@ -778,7 +839,7 @@ select:focus-visible,
     color: #cbd5e1;
     cursor: pointer;
     border-bottom: 1px solid rgba(255,255,255,0.05);
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--calc-font-scale));
     font-family: var(--font-mono);
     transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -806,7 +867,7 @@ select:focus-visible,
     padding: 8px 12px;
     border-radius: var(--radius-md);
     font-family: var(--font-main);
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--calc-font-scale));
     outline: none;
     cursor: pointer;
     appearance: none;
@@ -829,7 +890,7 @@ select:focus-visible,
     color: white;
     font-weight: 600;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--calc-font-scale));
     transition: background var(--transition-fast);
 }
 
@@ -853,7 +914,7 @@ select:focus-visible,
     color: #94a3b8;
     padding: 8px;
     border-radius: var(--radius-sm);
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--calc-font-scale));
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-normal);
@@ -875,7 +936,7 @@ select:focus-visible,
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
-    font-size: 0.8rem;
+    font-size: calc(0.8rem * var(--calc-font-scale));
     color: #cbd5e1;
 }
 
@@ -918,7 +979,7 @@ select:focus-visible,
     display: flex;
     justify-content: space-between;
     margin-bottom: 6px;
-    font-size: 0.8rem;
+    font-size: calc(0.8rem * var(--calc-font-scale));
     color: #cbd5e1;
 }
 
@@ -983,7 +1044,7 @@ input[type=range]::-moz-range-thumb {
     border: none;
     border-radius: var(--radius-md);
     color: #f1f5f9;
-    font-size: 0.8rem;
+    font-size: calc(0.8rem * var(--calc-font-scale));
     cursor: pointer;
     transition: transform var(--transition-fast), background var(--transition-fast);
     display: flex;
@@ -1010,7 +1071,7 @@ input[type=range]::-moz-range-thumb {
 .key.sci {
     background: #2c3e50;
     color: #60a5fa;
-    font-size: 0.7rem;
+    font-size: calc(0.7rem * var(--calc-font-scale));
     box-shadow: 0 3px 0 #1a242f;
 }
 .key.sci:hover {
@@ -1022,12 +1083,12 @@ input[type=range]::-moz-range-thumb {
 
 .key.func {
     color: #60a5fa;
-    font-size: 0.85rem;
+    font-size: calc(0.85rem * var(--calc-font-scale));
 }
 
 .key.op {
     color: var(--warning-yellow);
-    font-size: 0.88rem;
+    font-size: calc(0.88rem * var(--calc-font-scale));
 }
 
 .key.clear {
@@ -1035,7 +1096,7 @@ input[type=range]::-moz-range-thumb {
     box-shadow: 0 3px 0 var(--danger-red-dark);
     color: white;
     font-weight: bold;
-    font-size: 0.75rem;
+    font-size: calc(0.75rem * var(--calc-font-scale));
 }
 
 .key.clear:hover {
@@ -1051,7 +1112,7 @@ input[type=range]::-moz-range-thumb {
     color: #0f172a;
     box-shadow: 0 3px 0 #0891b2;
     font-weight: bold;
-    font-size: 0.76rem;
+    font-size: calc(0.76rem * var(--calc-font-scale));
 }
 
 .key.enter:hover {
@@ -1074,7 +1135,7 @@ input[type=range]::-moz-range-thumb {
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    z-index: 9000;
+    z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1200,36 +1261,6 @@ input[type=range]::-moz-range-thumb {
     border-radius: 4px;
 }
 
-/* Configuración Modal */
-.settings-group {
-    margin-bottom: 20px;
-}
-
-.settings-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--text-primary);
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.settings-label input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: var(--btn-active);
-}
-
-.settings-label select {
-    padding: 6px 12px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--text-muted);
-    background: var(--bg-app);
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
 /* =========================================================================
    14. ANIMACIONES GLOBALES
    ========================================================================= */
@@ -1297,25 +1328,23 @@ input[type=range]::-moz-range-thumb {
         transform: translateY(-50%);
     }
 
-    #play-btn { left: 15px; }
-    #video-btn { left: 61px; }
-    #screenshot-btn { left: 107px; }
-    #calc-toggle { left: 153px; }
-    #theme-toggle { left: 199px; }
-    #help-btn { left: 245px; }
-    #settings-btn { left: 291px; }
+    /* Ajustes de posición para móviles (agrupados más juntos) */
+    #play-btn { left: 10px; }
+    #video-btn { left: 50px; }
+    #screenshot-btn { left: 90px; }
+    #calc-toggle { left: 130px; }
+    #theme-toggle { left: 170px; }
+    #help-btn { left: 210px; }
+    #calc-resize-up { left: 250px; }
+    #calc-resize-down { left: 290px; }
 
     .hud-overlay {
-        top: 70px;
+        top: 60px;
         left: 15px;
     }
 
     .screen-container {
         padding: 10px 16px;
-    }
-
-    .screen-output {
-        font-size: 1.1rem;
     }
 
     .controls-area {
@@ -1326,11 +1355,6 @@ input[type=range]::-moz-range-thumb {
         margin-bottom: 8px;
     }
 
-    .examples-btn {
-        padding: 8px;
-        font-size: 0.85rem;
-    }
-
     .view-toggle {
         margin-bottom: 8px;
         padding: 3px;
@@ -1338,7 +1362,6 @@ input[type=range]::-moz-range-thumb {
 
     .toggle-btn {
         padding: 6px;
-        font-size: 0.8rem;
     }
 
     .color-selector {
@@ -1353,26 +1376,6 @@ input[type=range]::-moz-range-thumb {
         gap: 4px;
         padding: 8px;
         grid-auto-rows: minmax(28px, 1fr);
-    }
-
-    .key {
-        font-size: 0.7rem;
-    }
-
-    .key.sci {
-        font-size: 0.6rem;
-    }
-
-    .key.func {
-        font-size: 0.75rem;
-    }
-
-    .key.op {
-        font-size: 0.8rem;
-    }
-
-    .key.enter {
-        font-size: 0.7rem;
     }
 
     .splash-img {
@@ -1398,14 +1401,6 @@ input[type=range]::-moz-range-thumb {
         padding: 6px;
     }
     
-    .key {
-        font-size: 0.65rem;
-    }
-    
-    .key.sci {
-        font-size: 0.55rem;
-    }
-
     .examples-btn {
         font-size: 0.8rem;
     }
@@ -1416,21 +1411,7 @@ input[type=range]::-moz-range-thumb {
    ========================================================================= */
 @media (min-width: 1440px) {
     :root {
-        --calc-width-desktop: 440px;
         --top-btn-size: 46px;
-    }
-    .keypad {
-        gap: 8px;
-        padding: 16px;
-    }
-    .key {
-        font-size: 0.9rem;
-    }
-    .key.sci {
-        font-size: 0.8rem;
-    }
-    .screen-output {
-        font-size: 1.4rem;
     }
     .top-control-btn svg {
         width: 24px;
@@ -1440,17 +1421,11 @@ input[type=range]::-moz-range-thumb {
 
 @media (min-width: 1920px) {
     :root {
-        --calc-width-desktop: 480px;
+        --top-btn-size: 52px;
     }
-    .keypad {
-        gap: 10px;
-        padding: 20px;
-    }
-    .key {
-        font-size: 1rem;
-    }
-    .key.sci {
-        font-size: 0.9rem;
+    .top-control-btn svg {
+        width: 28px;
+        height: 28px;
     }
 }
 
@@ -1494,6 +1469,25 @@ input[type=range]::-moz-range-thumb {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* =========================================================================
+   19. IMPRESIÓN (Opcional, por si se imprime la página)
+   ========================================================================= */
+@media print {
+    body {
+        background: white;
+        color: black;
+        overflow: visible;
+    }
+    #splash-screen, #ui-overlay, .calculator-container {
+        display: none !important;
+    }
+    #viewport {
+        position: static;
+        width: 100%;
+        height: auto;
     }
 }
 ```
