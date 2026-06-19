@@ -47,7 +47,7 @@ body {
 /* LIENZO Y HUD */
 #viewport { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
 #ui-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5; pointer-events: none; }
-.hud-overlay { position: absolute; top: 80px; left: 20px; } /* Movido hacia abajo para no chocar con los botones superiores */
+.hud-overlay { position: absolute; top: 80px; left: 20px; } 
 .mode-badge { background: var(--panel-bg); padding: 8px 16px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px); transition: background 0.3s, color 0.3s; }
 .mode-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; transition: background 0.3s; }
 
@@ -57,7 +57,6 @@ body {
 .top-control-btn { position: absolute; top: 20px; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--panel-bg); color: var(--text-secondary); font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s, background 0.3s; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; pointer-events: auto; }
 .top-control-btn:active { transform: scale(0.9); }
 
-/* Posiciones a la IZQUIERDA */
 #play-btn { left: 20px; }
 #video-btn { left: 70px; }
 #screenshot-btn { left: 120px; }
@@ -77,8 +76,7 @@ body {
 .header-title { color: #94a3b8; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; flex: 1; text-align: center; }
 .mobile-drag-handle { display: none; }
 
-/* Botón Cerrar dentro de la calculadora */
-.close-calc-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; padding: 0; }
+.close-calc-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; padding: 0; position: relative; z-index: 10; }
 .close-calc-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
 .screen-container { padding: 16px; background: var(--screen-bg); border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
@@ -119,7 +117,6 @@ input[type=range] { width: 100%; height: 4px; background: #475569; border-radius
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--screen-text); cursor: pointer; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
 input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; border-radius: 50%; background: var(--screen-text); cursor: pointer; }
 
-/* TECLADO REDUCIDO 20% */
 .keypad { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(32px, 1fr); gap: 6px; padding: 12px; background: var(--calc-surface); border-top: 1px solid rgba(255,255,255,0.05); min-height: 0; }
 .key { background: var(--btn-bg); border: none; border-radius: 6px; color: #f1f5f9; font-size: 0.8rem; cursor: pointer; transition: transform 0.1s, background 0.2s; display: flex; align-items: center; justify-content: center; font-weight: 500; box-shadow: 0 3px 0 var(--btn-shadow); position: relative; top: 0; font-family: 'Inter', sans-serif; }
 .key:active { top: 3px; box-shadow: 0 0 0 var(--btn-shadow); background: #334155; }
@@ -159,7 +156,6 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: none; b
     .color-selector { margin-bottom: 8px; }
     .slider-group { margin-bottom: 8px; }
 
-    /* Teclado móvil reducido 20% */
     .keypad { gap: 5px; padding: 8px; grid-auto-rows: minmax(28px, 1fr); }
     .key { font-size: 0.75rem; }
     .key.func { font-size: 0.65rem; }
