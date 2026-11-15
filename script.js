@@ -12,10 +12,9 @@ const GRAPH_COLORS = [
 ];
 
 const CURVE_RESOLUTION = 500;
-const MESH_SEGMENTS = 85; // Equilibrio óptimo entre nitidez y 60fps en móviles
+const MESH_SEGMENTS = 85;
 
 const AppState = {
-    /** @type {Array<{expr: string, color: number, visible: boolean, compiled: Object|null, isImplicit: boolean}>} */
     graphData: [],
     currentGraphIndex: 0,
     a: 1.0,
@@ -67,7 +66,7 @@ const THEMES = {
 };
 
 /* =========================================================================
-   2. CACHÉ DE REFERENCIAS DOM
+   2. CACHÉ DE REFERENCIAS DOM Y UPGRADE DE LA PANTALLA LCD
    ========================================================================= */
 
 const els = {
@@ -126,15 +125,43 @@ const els = {
     closeHelpBtn: document.getElementById('close-help-btn')
 };
 
+/**
+ * Convierte automáticamente el #display en un <input type="text"> nativo
+ * para que el cursor, selección, flechas y Backspace funcionen con fluidez total.
+ */
+function upgradeDisplayToNativeInput() {
+    if (!els.display || els.display.tagName === 'INPUT') return;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'display';
+    input.className = els.display.className;
+    input.setAttribute('aria-label', 'Pantalla de expresión matemática');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'none');
+    input.setAttribute('spellcheck', 'false');
+    input.placeholder = 'Escribe una función, ej: sin(x)';
+
+    // En móviles/iPhone bloqueamos el teclado nativo salvo que el usuario lo pida con ⌨️
+    if (window.innerWidth <= 768) {
+        input.setAttribute('inputmode', 'none');
+    }
+
+    // Estilos inline de seguridad para que luzca idéntico a la pantalla LCD
+    input.style.width = '100%';
+    input.style.background = 'transparent';
+    input.style.border = 'none';
+    input.style.outline = 'none';
+
+    els.display.parentNode.replaceChild(input, els.display);
+    els.display = input;
+}
+
 /* =========================================================================
    3. MOTOR ALGEBRAICO CON MATH.JS Y RENDERIZADO KATEX
    ========================================================================= */
 
-/**
- * Normaliza atajos de usuario para que sean 100% compatibles con el parser de Math.js.
- * @param {string} rawExpr
- * @returns {{cleanExpr: string, isImplicit: boolean}}
- */
 function normalizeForMathJS(rawExpr) {
     if (!rawExpr || !rawExpr.trim()) return { cleanExpr: '', isImplicit: false };
 
@@ -149,7 +176,6 @@ function normalizeForMathJS(rawExpr) {
 
     let isImplicit = false;
 
-    // Manejo de signos '='
     if (expr.includes('=')) {
         const parts = expr.split('=');
         if (parts.length === 2) {
@@ -169,9 +195,6 @@ function normalizeForMathJS(rawExpr) {
     return { cleanExpr: expr, isImplicit };
 }
 
-/**
- * Construye el diccionario de funciones y constantes para Math.js respetando RAD/DEG.
- */
 function buildEvaluationScope(x = 0, y = 0, t = 0) {
     const isDeg = AppState.angleMode === 'DEG';
     const toRad = (v) => (isDeg ? (v * Math.PI) / 180 : v);
@@ -190,7 +213,6 @@ function buildEvaluationScope(x = 0, y = 0, t = 0) {
         ans: AppState.lastAnswer,
         mr: AppState.memory,
 
-        // Trigonometría sensible a RAD / DEG
         sin: (v) => Math.sin(toRad(v)),
         cos: (v) => Math.cos(toRad(v)),
         tan: (v) => Math.tan(toRad(v)),
@@ -199,7 +221,6 @@ function buildEvaluationScope(x = 0, y = 0, t = 0) {
         atan: (v) => fromRad(Math.atan(v)),
         atan2: (vy, vx) => fromRad(Math.atan2(vy, vx)),
 
-        // Hiperbólicas
         sinh: Math.sinh,
         cosh: Math.cosh,
         tanh: Math.tanh,
@@ -207,13 +228,11 @@ function buildEvaluationScope(x = 0, y = 0, t = 0) {
         acosh: Math.acosh,
         atanh: Math.atanh,
 
-        // Logarítmicas y exponenciales
         ln: Math.log,
         log: Math.log10,
         log10: Math.log10,
         exp: Math.exp,
 
-        // Raíces y utilidades
         sqrt: Math.sqrt,
         cbrt: Math.cbrt,
         nthRoot: (val, root = 2) => {
@@ -232,7 +251,6 @@ function buildEvaluationScope(x = 0, y = 0, t = 0) {
         round: Math.round,
         sign: Math.sign,
 
-        // Combinatoria respaldada por Math.js
         nCr: (n, r) => {
             if (typeof window.math !== 'undefined') {
                 try { return window.math.combinations(Math.round(n), Math.round(r)); } catch (_) { return NaN; }
@@ -249,10 +267,18 @@ function buildEvaluationScope(x = 0, y = 0, t = 0) {
 }
 
 /**
- * Compila la expresión de una ranura y la guarda en caché para evaluación ultra-rápida.
- * @param {number} index
- * @returns {boolean} True si la expresión es válida
+ * Equilibra paréntesis abiertos al final para que la gráfica se dibuje en vivo
+ * mientras el usuario escribe (ej. escribir "sin(x" grafica "sin(x)" sin dar error).
  */
+function autoCloseParentheses(expr) {
+    let openCount = 0;
+    for (const ch of expr) {
+        if (ch === '(') openCount++;
+        else if (ch === ')') openCount = Math.max(0, openCount - 1);
+    }
+    return openCount > 0 ? expr + ')'.repeat(openCount) : expr;
+}
+
 function compileGraphSlot(index) {
     const slot = AppState.graphData[index];
     const { cleanExpr, isImplicit } = normalizeForMathJS(slot.expr);
@@ -263,38 +289,35 @@ function compileGraphSlot(index) {
         return true;
     }
 
+    const balancedExpr = autoCloseParentheses(cleanExpr);
+
     try {
         if (typeof window.math !== 'undefined') {
-            const compiled = window.math.compile(cleanExpr);
-            // Prueba rápida de evaluación para detectar identificadores desconocidos
+            const compiled = window.math.compile(balancedExpr);
             compiled.evaluate(buildEvaluationScope(1, 1, 0));
             slot.compiled = compiled;
             return true;
         }
-    } catch (err) {
+    } catch (_) {
         slot.compiled = null;
         return false;
     }
     return false;
 }
 
-/**
- * Evalúa una ranura previamente compilada pasando únicamente el objeto scope reutilizable.
- */
 function evalCompiledSlot(slot, scope) {
     if (!slot || !slot.compiled) return null;
     try {
         const res = slot.compiled.evaluate(scope);
-        const num = typeof res === 'number' ? res : (res && typeof res.re === 'number' ? (Math.abs(res.im) < 1e-9 ? res.re : NaN) : Number(res));
+        const num = typeof res === 'number'
+            ? res
+            : (res && typeof res.re === 'number' ? (Math.abs(res.im) < 1e-9 ? res.re : NaN) : Number(res));
         return (typeof num === 'number' && isFinite(num) && !isNaN(num)) ? num : null;
     } catch (_) {
         return null;
     }
 }
 
-/**
- * Renderiza la vista previa en formato LaTeX usando KaTeX y actualiza el badge de evaluación.
- */
 function renderLatexAndInstantEval() {
     const slot = AppState.graphData[AppState.currentGraphIndex];
     const raw = (slot.expr || '').trim();
@@ -306,11 +329,11 @@ function renderLatexAndInstantEval() {
     }
 
     const { cleanExpr } = normalizeForMathJS(raw);
+    const balancedExpr = autoCloseParentheses(cleanExpr);
 
-    // 1. Renderizado LaTeX con KaTeX + Math.js
     if (els.latexPreview && typeof window.math !== 'undefined' && typeof window.katex !== 'undefined') {
         try {
-            const node = window.math.parse(cleanExpr);
+            const node = window.math.parse(balancedExpr);
             const tex = node.toTex({ parenthesis: 'keep', implicit: 'hide' });
             window.katex.render(tex, els.latexPreview, {
                 throwOnError: false,
@@ -321,7 +344,6 @@ function renderLatexAndInstantEval() {
         }
     }
 
-    // 2. Evaluación instantánea en (x=0, y=0, t=AppState.time)
     if (els.evalResult && slot.compiled) {
         const scope = buildEvaluationScope(0, 0, AppState.time);
         const val = evalCompiledSlot(slot, scope);
@@ -341,9 +363,6 @@ function formatShortNumber(n) {
     return Number(n.toFixed(4)).toString();
 }
 
-/**
- * Calcula la derivada simbólica respecto a 'x' de la función actual y la asigna a la siguiente ranura.
- */
 function computeSymbolicDerivative() {
     if (typeof window.math === 'undefined') return;
     const currentSlot = AppState.graphData[AppState.currentGraphIndex];
@@ -351,10 +370,9 @@ function computeSymbolicDerivative() {
     if (!cleanExpr) return;
 
     try {
-        const derivNode = window.math.derivative(cleanExpr, 'x');
+        const derivNode = window.math.derivative(autoCloseParentheses(cleanExpr), 'x');
         const derivStr = derivNode.toString();
 
-        // Buscar siguiente ranura vacía o usar la siguiente inmediata
         let targetIdx = (AppState.currentGraphIndex + 1) % MAX_GRAPHS;
         for (let i = 0; i < MAX_GRAPHS; i++) {
             if (!AppState.graphData[i].expr.trim() && i !== AppState.currentGraphIndex) {
@@ -372,7 +390,7 @@ function computeSymbolicDerivative() {
         updateDisplay();
         updateGraphics(AppState.time);
         pulseCalculator();
-    } catch (err) {
+    } catch (_) {
         els.display.classList.add('error');
     }
 }
@@ -402,7 +420,7 @@ function attemptLogin() {
     if (email.endsWith('@juventud.edu.mx') && email.length > '@juventud.edu.mx'.length) {
         AppState.hasStarted = true;
         els.errorMsg.style.display = 'none';
-        els.emailInput.blur(); // Cierra el teclado del móvil al iniciar sesión
+        els.emailInput.blur();
         els.splash.classList.add('hidden');
         setTimeout(() => { els.splash.style.display = 'none'; }, 550);
         initCalculator();
@@ -430,16 +448,16 @@ if (els.loginForm) {
    ========================================================================= */
 
 function initCalculator() {
-    // 6.1. Poblar selector de 10 gráficas
+    upgradeDisplayToNativeInput();
+
     els.graphSelector.innerHTML = '';
     for (let i = 0; i < MAX_GRAPHS; i++) {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.innerText = `f${i + 1}(x, y, t)`;
+        opt.innerText = `Gráfica ${i + 1} (f${i + 1})`;
         els.graphSelector.appendChild(opt);
     }
 
-    // 6.2. Poblar catálogo de ejemplos
     if (els.examplesTemplate) {
         els.examplesDropdown.innerHTML = '';
         const items = els.examplesTemplate.content.querySelectorAll('.examples-item');
@@ -458,21 +476,17 @@ function initCalculator() {
         });
     }
 
-    // 6.3. Compilar gráfica inicial
     compileGraphSlot(0);
 
-    // 6.4. Eventos de interfaz, teclado y gestos móviles
     setupUIEvents();
+    setupDisplayInputEvents();
     setupPhysicalKeyboard();
-    setupDisplayEditable();
     setupMobileSwipeGesture();
 
-    // 6.5. Inicializar motor gráfico Three.js
     setupThreeJS();
     setupScenes();
     updateColorButtonsUI();
 
-    // 6.6. Render inicial
     setMode('2D');
     updateDisplay();
     updateGraphics(0);
@@ -622,7 +636,6 @@ function setupScenes() {
         pointers1D.push(mesh);
     }
 
-    // Puntero interactivo para coordenadas
     mouse = new THREE.Vector2();
     pointerMesh = new THREE.Mesh(
         new THREE.SphereGeometry(0.13, 16, 16),
@@ -669,7 +682,7 @@ function rebuild1DLabels(color) {
    ========================================================================= */
 
 function updateGraphics(t = 0) {
-    // Reutilizamos un único objeto scope por ciclo para evitar Garbage Collection masivo
+    if ( curves2D.length === 0 ) return;
     const scope = buildEvaluationScope(0, 0, t);
 
     for (let i = 0; i < MAX_GRAPHS; i++) {
@@ -682,7 +695,6 @@ function updateGraphics(t = 0) {
             continue;
         }
 
-        // --- MODO 1D ---
         if (AppState.mode === '1D') {
             scope.x = 0;
             scope.y = 0;
@@ -696,10 +708,7 @@ function updateGraphics(t = 0) {
             }
             if (curves2D[i]) curves2D[i].line.visible = false;
             if (meshes3D[i]) meshes3D[i].mesh.visible = false;
-        }
-
-        // --- MODO 2D (con filtro de asíntotas) ---
-        else if (AppState.mode === '2D') {
+        } else if (AppState.mode === '2D') {
             const pos2D = curves2D[i].geo.attributes.position;
             let prevY = null;
 
@@ -709,7 +718,6 @@ function updateGraphics(t = 0) {
                 scope.y = 0;
                 const y = evalCompiledSlot(g, scope);
 
-                // Filtrar discontinuidades/asíntotas (ej. tan(x), 1/x)
                 if (y !== null && Math.abs(y) <= 25 && (prevY === null || Math.abs(y - prevY) < 12)) {
                     pos2D.setXYZ(j, x, THREE.MathUtils.clamp(y, -6, 6), 0);
                     prevY = y;
@@ -723,10 +731,7 @@ function updateGraphics(t = 0) {
             curves2D[i].line.visible = true;
             if (meshes3D[i]) meshes3D[i].mesh.visible = false;
             if (pointers1D[i]) pointers1D[i].visible = false;
-        }
-
-        // --- MODO 3D ---
-        else if (AppState.mode === '3D') {
+        } else if (AppState.mode === '3D') {
             const pos3D = meshes3D[i].geo.attributes.position;
             const col3D = meshes3D[i].geo.attributes.color;
             const cLow = new THREE.Color(g.color);
@@ -764,11 +769,17 @@ function updateGraphics(t = 0) {
 }
 
 /* =========================================================================
-   9. EVENTOS DE INTERFAZ Y COMPATIBILIDAD IPHONE / ANDROID / PC
+   9. EVENTOS DE INTERFAZ Y CONTROL PRECISO DEL CURSOR
    ========================================================================= */
 
 function setupUIEvents() {
-    // Teclado Científico Virtual
+    // Evitar que al hacer clic en un botón de la calculadora se pierda la selección del input en PC
+    els.keypad.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button.key')) {
+            e.preventDefault();
+        }
+    });
+
     els.keypad.addEventListener('click', (e) => {
         const btn = e.target.closest('button.key');
         if (!btn) return;
@@ -779,11 +790,10 @@ function setupUIEvents() {
         if (action) {
             handleAction(action);
         } else if (insert !== undefined) {
-            insertText(insert);
+            insertTextAtCursor(insert);
         }
     });
 
-    // Botón para activar/desactivar teclado nativo del móvil (útil para pegar en iPhone/Android)
     if (els.mobileKbBtn) {
         els.mobileKbBtn.addEventListener('click', () => {
             AppState.nativeKeyboardEnabled = !AppState.nativeKeyboardEnabled;
@@ -797,7 +807,6 @@ function setupUIEvents() {
         });
     }
 
-    // Sliders A y B
     els.sliderA.addEventListener('input', (e) => {
         AppState.a = parseFloat(e.target.value);
         els.valA.innerText = AppState.a.toFixed(1);
@@ -810,12 +819,10 @@ function setupUIEvents() {
         updateGraphics(AppState.time);
     });
 
-    // Conmutadores 1D / 2D / 3D
     els.btn1D.addEventListener('click', () => setMode('1D'));
     els.btn2D.addEventListener('click', () => setMode('2D'));
     els.btn3D.addEventListener('click', () => setMode('3D'));
 
-    // Mostrar / Ocultar Calculadora
     els.calcToggleBtn.addEventListener('click', () => {
         els.calc.classList.contains('hidden-calc') ? showCalculator() : hideCalculator();
     });
@@ -826,16 +833,13 @@ function setupUIEvents() {
         hideCalculator();
     });
 
-    // Centrar cámara
     if (els.resetCamBtn) {
         els.resetCamBtn.addEventListener('click', () => setMode(AppState.mode, true));
     }
 
-    // Escala de calculadora
     els.resizeUpBtn.addEventListener('click', () => adjustCalculatorSize(0.08));
     els.resizeDownBtn.addEventListener('click', () => adjustCalculatorSize(-0.08));
 
-    // Selector de ranura de gráfica
     els.graphSelector.addEventListener('change', (e) => {
         AppState.currentGraphIndex = parseInt(e.target.value, 10);
         compileGraphSlot(AppState.currentGraphIndex);
@@ -844,17 +848,12 @@ function setupUIEvents() {
         updateGraphics(AppState.time);
     });
 
-    // Botón de derivada simbólica d/dx
     if (els.derivGraphBtn) {
         els.derivGraphBtn.addEventListener('click', computeSymbolicDerivative);
     }
 
-    // Borrar función actual
-    els.deleteGraphBtn.addEventListener('click', () => {
-        clearDisplay();
-    });
+    els.deleteGraphBtn.addEventListener('click', clearDisplay);
 
-    // Selector de color
     els.colorBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             AppState.graphData[AppState.currentGraphIndex].color = parseInt(btn.dataset.color, 16);
@@ -863,7 +862,6 @@ function setupUIEvents() {
         });
     });
 
-    // Menú de ejemplos
     els.examplesBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         els.examplesDropdown.classList.toggle('show');
@@ -874,7 +872,6 @@ function setupUIEvents() {
         }
     });
 
-    // Animación temporal (t)
     els.playBtn.addEventListener('click', () => {
         AppState.isPlaying = !AppState.isPlaying;
         els.playBtn.innerHTML = AppState.isPlaying
@@ -886,14 +883,12 @@ function setupUIEvents() {
     els.videoBtn.addEventListener('click', toggleVideoRecording);
     els.themeBtn.addEventListener('click', toggleTheme);
 
-    // Modal de ayuda
     els.helpBtn.addEventListener('click', () => els.helpModal.classList.add('show'));
     els.closeHelpBtn.addEventListener('click', () => els.helpModal.classList.remove('show'));
     els.helpModal.addEventListener('click', (e) => {
         if (e.target === els.helpModal) els.helpModal.classList.remove('show');
     });
 
-    // Puntero de coordenadas en lienzo
     window.addEventListener('mousemove', (e) => {
         if (!e.target.closest('.calculator-container') && !e.target.closest('.top-controls-bar')) {
             handlePointer(e.clientX, e.clientY);
@@ -920,9 +915,6 @@ function showCalculator() {
     els.calc.classList.remove('hidden-calc');
 }
 
-/**
- * Permite deslizar hacia abajo la cabecera de la calculadora en iPhone y Android para minimizarla.
- */
 function setupMobileSwipeGesture() {
     if (!els.calcHeader) return;
     let startY = 0;
@@ -950,45 +942,42 @@ function adjustCalculatorSize(delta) {
 }
 
 /* =========================================================================
-   10. PANTALLA LCD EDITABLE Y TECLADO FÍSICO (SIN DOBLE ESCRITURA)
+   10. MANEJO DE LA PANTALLA INPUT Y TECLADO FÍSICO (PC Y MÓVIL)
    ========================================================================= */
 
-function setupDisplayEditable() {
-    els.display.addEventListener('paste', (e) => {
-        e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData('text/plain').replace(/\r?\n/g, '');
-        insertText(text);
-    });
-
+function setupDisplayInputEvents() {
     els.display.addEventListener('input', () => {
-        syncDisplayToState();
+        const slot = AppState.graphData[AppState.currentGraphIndex];
+        slot.expr = els.display.value;
+
+        const isValid = compileGraphSlot(AppState.currentGraphIndex);
+        els.display.classList.toggle('error', !isValid && slot.expr.trim() !== '');
+        updateGraphics(AppState.time);
     });
 
     els.display.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             calculate();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            clearDisplay();
         }
-        // Evitar que el listener global duplique la tecla cuando el usuario edita directamente en #display
+        // Detener propagación para que el listener global de window no intercepte lo que ya maneja el <input>
         e.stopPropagation();
     });
 }
 
-function syncDisplayToState() {
-    const rawText = els.display.innerText.replace(/\u200B/g, '').trim();
-    const text = rawText === '0' ? '' : rawText;
-    AppState.graphData[AppState.currentGraphIndex].expr = text;
-
-    const isValid = compileGraphSlot(AppState.currentGraphIndex);
-    els.display.classList.toggle('error', !isValid && text !== '');
-
-    updateGraphics(AppState.time);
-}
-
+/**
+ * Si el usuario presiona una tecla en PC sin haber hecho clic antes en el input,
+ * redirige la acción de forma segura (verificando estrictamente e.key.length === 1).
+ */
 function setupPhysicalKeyboard() {
     window.addEventListener('keydown', (e) => {
         if (!AppState.hasStarted) return;
-        if (document.activeElement === els.emailInput || document.activeElement === els.display) return;
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
+
         if (els.helpModal.classList.contains('show')) {
             if (e.key === 'Escape') els.helpModal.classList.remove('show');
             return;
@@ -996,24 +985,26 @@ function setupPhysicalKeyboard() {
         if (e.ctrlKey || e.metaKey || e.altKey) return;
 
         const key = e.key;
-        if (/^[a-z0-9+\-*/().,^!]$/i.test(key)) {
+
+        // IMPORTANTE: key.length === 1 impide que "Backspace", "Shift", "F5", etc. se escriban como texto
+        if (key.length === 1 && /^[a-zA-Z0-9+\-*/().,^!=]$/i.test(key)) {
             e.preventDefault();
-            insertText(key);
+            insertTextAtCursor(key);
         } else if (key === 'Backspace') {
             e.preventDefault();
-            backspace();
-        } else if (key === 'Enter' || key === '=') {
-            e.preventDefault();
-            calculate();
-        } else if (key === 'Escape') {
+            backspaceAtCursor();
+        } else if (key === 'Delete' || key === 'Escape') {
             e.preventDefault();
             clearDisplay();
+        } else if (key === 'Enter') {
+            e.preventDefault();
+            calculate();
         }
     });
 }
 
 /* =========================================================================
-   11. ACCIONES CIENTÍFICAS, MEMORIA Y EDICIÓN DE EXPRESIONES
+   11. INSERCIÓN Y BORRADO INTELIGENTE EN LA POSICIÓN DEL CURSOR
    ========================================================================= */
 
 function handleAction(action) {
@@ -1022,7 +1013,7 @@ function handleAction(action) {
             clearDisplay();
             break;
         case 'backspace':
-            backspace();
+            backspaceAtCursor();
             break;
         case 'calculate':
             calculate();
@@ -1044,7 +1035,7 @@ function handleAction(action) {
             updateMemoryIndicator();
             break;
         case 'MR':
-            insertText(formatShortNumber(AppState.memory));
+            insertTextAtCursor(formatShortNumber(AppState.memory));
             break;
         case 'M+': {
             const slot = AppState.graphData[AppState.currentGraphIndex];
@@ -1095,16 +1086,97 @@ function updateAngleBadge() {
 }
 
 /**
- * Inserta texto en la expresión actual sin disparar el teclado nativo en celulares/iPhone.
+ * Inserta el texto exactamente donde está el cursor del usuario (o reemplaza el texto seleccionado).
+ * Además corrige exponentes huérfanos (ej. si la caja está vacía y presionas "x²", inserta "x^2").
  */
-function insertText(str) {
-    const slot = AppState.graphData[AppState.currentGraphIndex];
-    slot.expr = (slot.expr || '') + str;
+function insertTextAtCursor(str) {
+    const input = els.display;
+    const currentVal = input.value || '';
+
+    const start = typeof input.selectionStart === 'number' ? input.selectionStart : currentVal.length;
+    const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : currentVal.length;
+
+    let textToInsert = str;
+    const beforeCursor = currentVal.slice(0, start);
+    const afterCursor = currentVal.slice(end);
+
+    // Si el usuario presiona x² (^2), x³ (^3) o xʸ (^) sin haber escrito una base antes, anteponemos 'x'
+    if ((textToInsert === '^2' || textToInsert === '^3' || textToInsert === '^') &&
+        (beforeCursor.trim() === '' || /[+\-*/(,=^]$/.test(beforeCursor.trim()))) {
+        textToInsert = 'x' + textToInsert;
+    }
+
+    const newValue = beforeCursor + textToInsert + afterCursor;
+    const newCursorPos = beforeCursor.length + textToInsert.length;
+
+    input.value = newValue;
+    AppState.graphData[AppState.currentGraphIndex].expr = newValue;
+
+    // Mantener el cursor visible en PC o cuando el teclado móvil está activo
+    if (!AppState.isMobile || AppState.nativeKeyboardEnabled) {
+        input.focus();
+    }
+    try {
+        input.setSelectionRange(newCursorPos, newCursorPos);
+    } catch (_) {}
 
     const isValid = compileGraphSlot(AppState.currentGraphIndex);
-    els.display.classList.toggle('error', !isValid && slot.expr !== '');
+    input.classList.toggle('error', !isValid && newValue.trim() !== '');
 
-    updateDisplay();
+    renderLatexAndInstantEval();
+    updateGraphics(AppState.time);
+}
+
+/**
+ * Borra el texto seleccionado o el carácter/función justo antes del cursor.
+ */
+function backspaceAtCursor() {
+    const input = els.display;
+    const currentVal = input.value || '';
+    if (!currentVal) return;
+
+    const start = typeof input.selectionStart === 'number' ? input.selectionStart : currentVal.length;
+    const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : currentVal.length;
+
+    let newValue = '';
+    let newCursorPos = start;
+
+    if (start !== end) {
+        // Si había un bloque seleccionado con el ratón, borrar toda la selección
+        newValue = currentVal.slice(0, start) + currentVal.slice(end);
+        newCursorPos = start;
+    } else if (start > 0) {
+        const before = currentVal.slice(0, start);
+        const after = currentVal.slice(start);
+
+        // Si justo antes del cursor hay una función completa como "sin(", la borra de un solo golpe
+        const funcMatch = before.match(/(asinh|acosh|atanh|sinh|cosh|tanh|asin|acos|atan|sqrt|cbrt|nthRoot|nthroot|log10|sin|cos|tan|exp|abs|nPr|nCr|log|ln)\($/);
+        if (funcMatch) {
+            const cutLen = funcMatch[0].length;
+            newValue = before.slice(0, -cutLen) + after;
+            newCursorPos = start - cutLen;
+        } else {
+            newValue = before.slice(0, -1) + after;
+            newCursorPos = start - 1;
+        }
+    } else {
+        return;
+    }
+
+    input.value = newValue;
+    AppState.graphData[AppState.currentGraphIndex].expr = newValue;
+
+    if (!AppState.isMobile || AppState.nativeKeyboardEnabled) {
+        input.focus();
+    }
+    try {
+        input.setSelectionRange(newCursorPos, newCursorPos);
+    } catch (_) {}
+
+    const isValid = compileGraphSlot(AppState.currentGraphIndex);
+    input.classList.toggle('error', !isValid && newValue.trim() !== '');
+
+    renderLatexAndInstantEval();
     updateGraphics(AppState.time);
 }
 
@@ -1112,27 +1184,14 @@ function clearDisplay() {
     const slot = AppState.graphData[AppState.currentGraphIndex];
     slot.expr = '';
     slot.compiled = null;
+    els.display.value = '';
     els.display.classList.remove('error');
-    updateDisplay();
-    updateGraphics(AppState.time);
-}
 
-function backspace() {
-    const slot = AppState.graphData[AppState.currentGraphIndex];
-    if (!slot.expr) return;
-
-    // Borrar tokens completos si termina en función (ej. "sin(", "sqrt(", "asin(")
-    const funcMatch = slot.expr.match(/(asinh|acosh|atanh|sinh|cosh|tanh|asin|acos|atan|sqrt|cbrt|nthRoot|log10|sin|cos|tan|exp|abs|nPr|nCr|ln)\($/);
-    if (funcMatch) {
-        slot.expr = slot.expr.slice(0, -funcMatch[0].length);
-    } else {
-        slot.expr = slot.expr.slice(0, -1);
+    if (!AppState.isMobile || AppState.nativeKeyboardEnabled) {
+        els.display.focus();
     }
 
-    const isValid = compileGraphSlot(AppState.currentGraphIndex);
-    els.display.classList.toggle('error', !isValid && slot.expr !== '');
-
-    updateDisplay();
+    renderLatexAndInstantEval();
     updateGraphics(AppState.time);
 }
 
@@ -1140,11 +1199,16 @@ function calculate() {
     const slot = AppState.graphData[AppState.currentGraphIndex];
     if (!slot.expr.trim()) return;
 
+    // Al presionar ENTER cerramos paréntesis pendientes formalmente en el texto
+    slot.expr = autoCloseParentheses(slot.expr.trim());
+    els.display.value = slot.expr;
+
     if (compileGraphSlot(AppState.currentGraphIndex)) {
         const val = evalCompiledSlot(slot, buildEvaluationScope(0, 0, AppState.time));
         if (val !== null) {
             AppState.lastAnswer = val;
         }
+        els.display.classList.remove('error');
         updateGraphics(AppState.time);
         pulseCalculator();
     } else {
@@ -1171,14 +1235,11 @@ function updateDisplay() {
     const slot = AppState.graphData[AppState.currentGraphIndex];
     const text = slot.expr || '';
     els.screenLabel.innerText = `f${AppState.currentGraphIndex + 1}(x, y, t) =`;
+    els.display.value = text;
 
-    const displayText = text === '' ? '0' : text;
-    if (document.activeElement !== els.display) {
-        els.display.textContent = displayText;
-        const cursorSpan = document.createElement('span');
-        cursorSpan.className = 'cursor';
-        els.display.appendChild(cursorSpan);
-    }
+    const isValid = compileGraphSlot(AppState.currentGraphIndex);
+    els.display.classList.toggle('error', !isValid && text.trim() !== '');
+
     renderLatexAndInstantEval();
 }
 
@@ -1215,7 +1276,7 @@ function toggleVideoRecording() {
     } else {
         try {
             if (!renderer.domElement.captureStream || typeof MediaRecorder === 'undefined') {
-                alert('La grabación directa de video WebGL no está habilitada en este navegador móvil.');
+                alert('La grabación directa de video WebGL no está habilitada en este navegador.');
                 return;
             }
             const stream = renderer.domElement.captureStream(30);
@@ -1366,7 +1427,7 @@ function hideTooltip() {
 }
 
 /* =========================================================================
-   15. REDIMENSIÓN ADAPTATIVA (SIN RECARGAR LA PÁGINA EN MÓVILES)
+   15. REDIMENSIÓN ADAPTATIVA
    ========================================================================= */
 
 function handleResize() {
@@ -1379,7 +1440,7 @@ function handleResize() {
 }
 
 /* =========================================================================
-   16. LOOP PRINCIPAL DE RENDERIZADO (60 FPS)
+   16. LOOP PRINCIPAL DE RENDERIZADO
    ========================================================================= */
 
 function animate() {
